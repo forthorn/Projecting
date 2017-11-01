@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:background="@color/alpha_black70"
+    tools:context="com.forthorn.projecting.AboutActivity">
+
+    <ImageView
+        android:id="@+id/about_logo_iv"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginLeft="18dp"
+        android:layout_marginTop="8dp"
+        android:src="@color/colorPrimary"/>
+
+    <LinearLayout
+        android:layout_width="400dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="54dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="12dp"
+            android:gravity="center"
+            android:text="设备信息"
+            android:textColor="@color/colorWhite"
+            android:textSize="20sp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="6dp"
+            android:paddingTop="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设备名称"
+                android:textColor="@color/colorWhite"
+                android:textSize="14sp"/>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"/>
+
+            <TextView
+                android:id="@+id/about_name_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="酒店设备"
+                android:textColor="@color/colorWhite"
+                android:textSize="14sp"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/colorWhite"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="6dp"
+            android:paddingTop="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设备编码"
+                android:textColor="@color/colorWhite"
+                android:textSize="14sp"/>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"/>
+
+            <TextView
+                android:id="@+id/about_code_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="021PD029123CASDASDA SDASDJJJ"
+                android:textColor="@color/colorWhite"
+                android:textSize="14sp"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/colorWhite"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingBottom="6dp"
+            android:paddingTop="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设备所在分区"
+                android:textColor="@color/colorWhite"
+                android:textSize="14sp"/>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"/>
+
+            <TextView
+                android:id="@+id/about_area_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="上海 浦东"
+                android:textColor="@color/colorWhite"
+                android:textSize="14sp"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/colorWhite"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingBottom="6dp"
+            android:paddingTop="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设备所在详细地址"
+                android:textColor="@color/colorWhite"
+                android:textSize="14sp"/>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"/>
+
+            <TextView
+                android:id="@+id/about_address_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="上海市浦东新区金海路1255号1楼B105"
+                android:textColor="@color/colorWhite"
+                android:textSize="14sp"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/colorWhite"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingBottom="6dp"
+            android:paddingTop="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="设备类型"
+                android:textColor="@color/colorWhite"
+                android:textSize="14sp"/>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"/>
+
+            <TextView
+                android:id="@+id/about_type_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="酒店设备"
+                android:textColor="@color/colorWhite"
+                android:textSize="14sp"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/colorWhite"/>
+    </LinearLayout>
+</FrameLayout>
