@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DBUtils {
+
     private static DBUtils sDBUtils;
     private DBHelper dbHelper = null;
     private SQLiteDatabase db = null;

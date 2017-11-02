@@ -2,6 +2,7 @@ package com.forthorn.projecting;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.util.Log;
@@ -50,7 +51,7 @@ import retrofit2.Response;
 import static com.forthorn.projecting.app.Status.*;
 
 
-public class HomeActivity extends Activity {
+public class HomeActivity extends Activity implements View.OnClickListener {
     //视频
     private FrameLayout mVideoFl;
     private PLVideoTextureView mVideoView;
@@ -86,7 +87,6 @@ public class HomeActivity extends Activity {
         super.onCreate(savedInstanceState);
         mContext = HomeActivity.this;
         setContentView(R.layout.activity_home);
-
         initView();
         initData();
         initEvent();
@@ -133,16 +133,17 @@ public class HomeActivity extends Activity {
         mTextFl = (FrameLayout) findViewById(R.id.text_fl);
         mTextTv = (TextView) findViewById(R.id.text_tv);
         mTextServerHolderLl = (LinearLayout) findViewById(R.id.text_server_holder_ll);
-
+        mIdleAboutIv.setOnClickListener(this);
     }
 
     private void initData() {
-
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
         mUuid = uuidFactory.getDeviceUuid().toString();
-        mDeviceId = SPUtils.getSharedStringData(mContext, BundleKey.DEVICE_ID);
+        SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_ID, mUuid);
+        mDeviceId = mUuid;
         mDeviceCode = SPUtils.getSharedStringData(mContext, BundleKey.DEVICE_CODE);
 
+        mPicList.add("https://img11.360buyimg.com/da/jfs/t9595/285/2471111611/183642/3aad4810/59f7e3afN583ea737.jpg");
         mPictureAdapter = new PictureAdapter(mContext, mPicList);
         mPicturePager.setAdapter(mPictureAdapter);
 //        mPicturePager.start();
@@ -364,7 +365,6 @@ public class HomeActivity extends Activity {
 
             }
         });
-
     }
 
     private void snapshot() {
@@ -465,4 +465,14 @@ public class HomeActivity extends Activity {
     }
 
 
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.idle_about_iv:
+                startActivity(new Intent(mContext, AboutActivity.class));
+                break;
+            default:
+                break;
+        }
+    }
 }
