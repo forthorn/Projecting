@@ -34,7 +34,6 @@
             android:id="@+id/network_tv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:drawableLeft="@drawable/ic_signal_wifi_4_bar_white_24dp"
             android:gravity="center"
             android:paddingRight="6dp"
             android:textColor="@color/colorWhite"

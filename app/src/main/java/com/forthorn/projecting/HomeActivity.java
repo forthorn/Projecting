@@ -1,10 +1,14 @@
 package com.forthorn.projecting;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.text.Html;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -25,6 +29,7 @@ import com.forthorn.projecting.func.picture.AutoViewPager;
 import com.forthorn.projecting.func.picture.PictureAdapter;
 import com.forthorn.projecting.util.SPUtils;
 import com.forthorn.projecting.util.ToastUtil;
+import com.forthorn.projecting.widget.NoticeDialog;
 import com.pili.pldroid.player.AVOptions;
 import com.pili.pldroid.player.PLMediaPlayer;
 import com.pili.pldroid.player.widget.PLVideoTextureView;
@@ -112,7 +117,19 @@ public class HomeActivity extends Activity implements View.OnClickListener {
     }
 
     private void initIM() {
+//        mIMUsername = SPUtils.getSharedStringData(mContext, BundleKey.IM_ACCOUNT);
+//        mIMPassword = SPUtils.getSharedStringData(mContext, BundleKey.IM_PASSWORD);
         JMessageClient.registerEventReceiver(this);
+        requestIMAccount();
+//        if (TextUtils.isEmpty(mDeviceId)) {
+//            registerIM();
+//        } else {
+//            login();
+//        }
+    }
+
+    private void registerIM() {
+        requestIMAccount();
     }
 
     private void initView() {
@@ -139,9 +156,13 @@ public class HomeActivity extends Activity implements View.OnClickListener {
     private void initData() {
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
         mUuid = uuidFactory.getDeviceUuid().toString();
-        SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_ID, mUuid);
-        mDeviceId = mUuid;
-        mDeviceCode = SPUtils.getSharedStringData(mContext, BundleKey.DEVICE_CODE);
+        // TODO: 2017/11/3
+        mUuid = "11211";
+        SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
+        mDeviceCode = mUuid;
+
+        mDeviceId = SPUtils.getSharedStringData(mContext, BundleKey.DEVICE_ID);
+        mIdleAboutIv.setImageResource(TextUtils.isEmpty(mDeviceCode) ? R.drawable.ic_info_offline : R.drawable.ic_info_online);
 
         mPicList.add("https://img11.360buyimg.com/da/jfs/t9595/285/2471111611/183642/3aad4810/59f7e3afN583ea737.jpg");
         mPictureAdapter = new PictureAdapter(mContext, mPicList);
@@ -153,7 +174,6 @@ public class HomeActivity extends Activity implements View.OnClickListener {
     }
 
     private void initEvent() {
-
 
     }
 
@@ -201,7 +221,8 @@ public class HomeActivity extends Activity implements View.OnClickListener {
                     });
                     ToastUtil.shortToast(mContext, "登陆成功" + myInfo.getUserName());
                     // TODO: 10/31/2017  请求数据
-
+                    mIdleServerStatusTv.setText("在线");
+                    mIdleServerStatusTv.setEnabled(true);
                 } else {
                     ToastUtil.shortToast(mContext, "Code:" + i + "   Reason:" + s);
                 }
@@ -272,11 +293,12 @@ public class HomeActivity extends Activity implements View.OnClickListener {
      */
     public void onEventMainThread(MessageEvent event) {
         Message msg = event.getMessage();
-        ToastUtil.shortToast(mContext, "收到消息：" + msg.getFromUser().getUserName());
+        Log.d("MessageEvent", "收到消息：" + msg.getFromUser().getUserName());
         switch (msg.getContentType()) {
             case text:  //处理文字消息
                 TextContent textContent = (TextContent) msg.getContent();
                 ToastUtil.shortToast(mContext, "消息：" + textContent.getText());
+                Log.d("MessageEvent", "消息：" + textContent.getText());
                 handMessageEvent(textContent.getText());
                 break;
             case image:
@@ -469,10 +491,26 @@ public class HomeActivity extends Activity implements View.OnClickListener {
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.idle_about_iv:
-                startActivity(new Intent(mContext, AboutActivity.class));
+                goToAbout();
                 break;
             default:
                 break;
+        }
+    }
+
+    private void goToAbout() {
+        if (TextUtils.isEmpty(SPUtils.getSharedStringData(mContext, BundleKey.DEVICE_ID))) {
+            String tip = "标识码：" + mUuid + "\n您的广告机后台还未注册,请先在后台注册后再打开";
+            NoticeDialog noticeDialog = new NoticeDialog(mContext, null, tip, new NoticeDialog.OnDialogListener() {
+                @Override
+                public void clickPositive() {
+
+                }
+            });
+            noticeDialog.show();
+            return;
+        } else {
+            startActivity(new Intent(mContext, AboutActivity.class));
         }
     }
 }

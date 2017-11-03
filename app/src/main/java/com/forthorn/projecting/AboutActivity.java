@@ -54,8 +54,9 @@ public class AboutActivity extends Activity implements View.OnClickListener {
         mAboutAreaTv.setText(mArea);
         mAboutAddressTv.setText(mAddress);
         mAboutTypeTv.setText(mType);
-        mAboutIdTv.setText("标识码:" + mId);
-        if (TextUtils.isEmpty(mCode)) {
+        mAboutIdTv.setText("标识码:" + mCode);
+        mAboutLogoIv.setImageResource(TextUtils.isEmpty(mCode) ? R.drawable.ic_info_offline : R.drawable.ic_info_online);
+        if (TextUtils.isEmpty(mId)) {
             new AlertDialog.Builder(mContext).setMessage(Html.fromHtml("您的广告机后台还未注册\n请先在后台注册后再打开"))
                     .setPositiveButton("确认", new DialogInterface.OnClickListener() {
                         @Override

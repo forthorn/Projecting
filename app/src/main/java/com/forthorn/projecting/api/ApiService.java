@@ -42,7 +42,7 @@ public interface ApiService {
      * 获取天气
      */
     @FormUrlEncoded
-    @POST("/advert_online/basic/api/v1/android/weather/weather")
+    @POST("/api/v1/android/weather/weather")
     Observable<BaseResponse> getWeather(
             @Header("Cache-Control") String cacheControl,
             @Field("equipment_id") String equipmentId,
@@ -53,7 +53,7 @@ public interface ApiService {
      * 获取账户密码
      */
     @FormUrlEncoded
-    @POST("/advert_online/basic/api/v1/android/weather/im")
+    @POST("/api/v1/android/weather/im")
     Call<IMAccount> getIMAccount(
             @Header("Cache-Control") String cacheControl,
             @Field("code") String equipmentCode

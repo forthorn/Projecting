@@ -19,8 +19,8 @@ package com.forthorn.projecting.api;
 public class ApiConstants {
 
 
-    public static final String JPUSH_HOST = "https://api.im.jpush.cn";
-    public static final String VOM_HOST = "https://advert.chindor.com";
+    public static final String JPUSH_HOST = "http://api.im.jpush.cn";
+    public static final String VOM_HOST = "http://advert.chindor.com";
 
     public static final String DEVICE_ANDROID = "0";
     public static final String DEVICE_IOS = "1";
