@@ -13,6 +13,24 @@ public class Download {
     private int status;
     private String url;
     private String path;
+    private int time;
+    private int fileSize;
+
+    public int getTime() {
+        return time;
+    }
+
+    public void setTime(int time) {
+        this.time = time;
+    }
+
+    public int getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(int fileSize) {
+        this.fileSize = fileSize;
+    }
 
     public int getId() {
         return id;
@@ -58,10 +76,12 @@ public class Download {
     public String toString() {
         return "Download{" +
                 "id=" + id +
-                ", taskId='" + taskId + '\'' +
+                ", taskId=" + taskId +
                 ", status=" + status +
                 ", url='" + url + '\'' +
                 ", path='" + path + '\'' +
+                ", time=" + time +
+                ", fileSize=" + fileSize +
                 '}';
     }
 }

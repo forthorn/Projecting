@@ -36,12 +36,14 @@ public class AutoViewPager extends ViewPager {
     public void start() {
         //先停止
         onStop();
-
         if (mTimer == null) {
             mTimer = new Timer();
         }
-        mTimer.schedule(new AutoTask(), 3000, 3000);
+        mTimer.schedule(new AutoTask(), 6000, 6000);
+    }
 
+    public void stop() {
+        onStop();
     }
 
     private Runnable runnable = new Runnable() {

@@ -4,8 +4,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import com.forthorn.projecting.app.AppApplication;
+import com.forthorn.projecting.app.AppConstant;
 import com.forthorn.projecting.entity.Download;
 import com.forthorn.projecting.entity.Task;
 
@@ -24,6 +26,7 @@ public class DBUtils {
         dbHelper = DBHelper.getInstance(mContext);
     }
 
+
     private static class InstanceHolder {
         private static final DBUtils DB_UTILS = new DBUtils(AppApplication.getContext());
     }
@@ -35,15 +38,21 @@ public class DBUtils {
 
     public void insertTask(Task task) {
         db = dbHelper.getWritableDatabase();
-        db.beginTransaction();
+//        db.beginTransaction();
         ContentValues values = new ContentValues();
         values.put(DBHelper.TASK_ID, task.getId());
         values.put(DBHelper.TASK_TYPE, task.getType());
+        values.put(DBHelper.TASK_DEVICE_ID, task.getEquip_id());
         values.put(DBHelper.TASK_STATUS, task.getStatus());
+        values.put(DBHelper.TASK_RUNNING_STATUS, task.getRunningStatus());
+        values.put(DBHelper.TASK_CREATE_TIME, task.getCreate_time());
+        values.put(DBHelper.TASK_LAST_MODIFY, task.getLast_modify());
         values.put(DBHelper.TASK_HOUR, task.getHour());
         values.put(DBHelper.TASK_DURATION, task.getDuration());
         values.put(DBHelper.TASK_DATE, task.getDate());
         values.put(DBHelper.TASK_CONTENT, task.getContent());
+        Log.e("ContentValues", values.toString());
+        Log.e("插入Task", task.toString());
         db.insert(DBHelper.TASK_TABLE, null, values);
         db.close();
     }
@@ -51,36 +60,45 @@ public class DBUtils {
 
     public void updateTask(Task task) {
         db = dbHelper.getWritableDatabase();
-        db.beginTransaction();
+//        db.beginTransaction();
         ContentValues values = new ContentValues();
         values.put(DBHelper.TASK_ID, task.getId());
         values.put(DBHelper.TASK_TYPE, task.getType());
+        values.put(DBHelper.TASK_DEVICE_ID, task.getEquip_id());
         values.put(DBHelper.TASK_STATUS, task.getStatus());
+        values.put(DBHelper.TASK_RUNNING_STATUS, task.getRunningStatus());
+        values.put(DBHelper.TASK_CREATE_TIME, task.getCreate_time());
+        values.put(DBHelper.TASK_LAST_MODIFY, task.getLast_modify());
         values.put(DBHelper.TASK_HOUR, task.getHour());
         values.put(DBHelper.TASK_DURATION, task.getDuration());
         values.put(DBHelper.TASK_DATE, task.getDate());
         values.put(DBHelper.TASK_CONTENT, task.getContent());
         db.update(DBHelper.TASK_TABLE, values, DBHelper.TASK_ID + "=?", new String[]{String.valueOf(task.getId())});
+        Log.e("更新Task", task.toString());
         db.close();
     }
 
     public void deleteTask(Task task) {
         db = dbHelper.getWritableDatabase();
-        db.beginTransaction();
+//        db.beginTransaction();
         db.delete(DBHelper.TASK_TABLE, DBHelper.TASK_ID + "=?", new String[]{String.valueOf(task.getId())});
+        Log.e("删除Task", task.toString());
         db.close();
     }
 
 
     public Task findTask(int id) {
         db = dbHelper.getWritableDatabase();
-        db.beginTransaction();
-        Cursor cursor = db.rawQuery("select * from TASK_TABLE where _id=?", new String[]{String.valueOf(id)});
+        Cursor cursor = db.rawQuery("select * from TASK_TABLE where task_id =?", new String[]{String.valueOf(id)});
         if (cursor.moveToNext()) {
             Task task = new Task();
             task.setId(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_ID)));
-            task.setStatus(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_STATUS)));
             task.setType(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_TYPE)));
+            task.setEquip_id(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DEVICE_ID)));
+            task.setStatus(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_STATUS)));
+            task.setRunningStatus(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_RUNNING_STATUS)));
+            task.setCreate_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_CREATE_TIME)));
+            task.setLast_modify(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_LAST_MODIFY)));
             task.setHour(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_HOUR)));
             task.setDuration(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DURATION)));
             task.setDate(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DATE)));
@@ -94,14 +112,18 @@ public class DBUtils {
 
     public List<Task> findAllTask() {
         db = dbHelper.getWritableDatabase();
-        db.beginTransaction();
+//        db.beginTransaction();
         List<Task> tasks = new ArrayList<>();
         Cursor cursor = db.rawQuery("select * from TASK_TABLE", new String[]{});
         while (cursor.moveToNext()) {
             Task task = new Task();
             task.setId(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_ID)));
-            task.setStatus(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_STATUS)));
             task.setType(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_TYPE)));
+            task.setEquip_id(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DEVICE_ID)));
+            task.setStatus(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_STATUS)));
+            task.setRunningStatus(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_RUNNING_STATUS)));
+            task.setCreate_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_CREATE_TIME)));
+            task.setLast_modify(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_LAST_MODIFY)));
             task.setHour(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_HOUR)));
             task.setDuration(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DURATION)));
             task.setDate(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DATE)));
@@ -112,23 +134,97 @@ public class DBUtils {
     }
 
 
-    public void insertDownload(Download download) {
+    public void deleteOverdueTask() {
         db = dbHelper.getWritableDatabase();
         db.beginTransaction();
+        try {
+            int time = (int) (System.currentTimeMillis() / 1000L);
+            Cursor cursor = db.rawQuery("select * from TASK_TABLE where task_date <= " + time, null);
+            while (cursor.moveToNext()) {
+                Task task = new Task();
+                task.setId(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_ID)));
+                task.setType(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_TYPE)));
+                task.setEquip_id(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DEVICE_ID)));
+                task.setStatus(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_STATUS)));
+                task.setRunningStatus(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_RUNNING_STATUS)));
+                task.setCreate_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_CREATE_TIME)));
+                task.setLast_modify(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_LAST_MODIFY)));
+                task.setHour(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_HOUR)));
+                task.setDuration(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DURATION)));
+                task.setDate(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DATE)));
+                task.setContent(cursor.getString(cursor.getColumnIndex(DBHelper.TASK_CONTENT)));
+                if (task.getDate() + task.getDuration() < time) {
+                    db.delete(DBHelper.TASK_TABLE, DBHelper.TASK_ID + "=?",
+                            new String[]{String.valueOf(task.getId())});
+                    Log.e("删除过期Task", task.toString());
+                }
+            }
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+        } finally {
+            db.endTransaction();
+            db.close();
+        }
+    }
+
+    public List<Task> findPauseTask() {
+        db = dbHelper.getWritableDatabase();
+        List<Task> tasks = new ArrayList<>();
+        db.beginTransaction();
+        try {
+            int time = (int) (System.currentTimeMillis() / 1000L);
+            Cursor cursor = db.rawQuery("select * from TASK_TABLE where task_date <= " + time, null);
+            while (cursor.moveToNext()) {
+                Task task = new Task();
+                task.setId(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_ID)));
+                task.setType(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_TYPE)));
+                task.setEquip_id(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DEVICE_ID)));
+                task.setStatus(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_STATUS)));
+                task.setRunningStatus(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_RUNNING_STATUS)));
+                task.setCreate_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_CREATE_TIME)));
+                task.setLast_modify(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_LAST_MODIFY)));
+                task.setHour(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_HOUR)));
+                task.setDuration(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DURATION)));
+                task.setDate(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DATE)));
+                task.setContent(cursor.getString(cursor.getColumnIndex(DBHelper.TASK_CONTENT)));
+                if (task.getDate() + task.getDuration() < time) {
+                    db.delete(DBHelper.TASK_TABLE, DBHelper.TASK_ID + " =?",
+                            new String[]{String.valueOf(task.getId())});
+                    Log.e("查暂停-删过期Task", task.toString());
+                } else {
+                    if (task.getRunningStatus() == AppConstant.TASK_RUNNING_STATUS_GOING) {
+                        tasks.add(task);
+                        Log.e("查到暂停Task", task.toString());
+                    }
+                }
+            }
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+        } finally {
+            db.endTransaction();
+            db.close();
+        }
+        return tasks;
+    }
+
+    public void insertDownload(Download download) {
+        db = dbHelper.getWritableDatabase();
+//        db.beginTransaction();
         ContentValues values = new ContentValues();
         values.put(DBHelper.DOWNLOAD_ID, download.getId());
         values.put(DBHelper.DOWNLOAD_TASK_ID, download.getTaskId());
         values.put(DBHelper.DOWNLOAD_STATUS, download.getStatus());
         values.put(DBHelper.DOWNLOAD_URL, download.getUrl());
         values.put(DBHelper.DOWNLOAD_PATH, download.getPath());
-        db.insert(DBHelper.TASK_TABLE, null, values);
+        values.put(DBHelper.DOWNLOAD_TIME, download.getTime());
+        values.put(DBHelper.DOWNLOAD_FILE_SIZE, download.getFileSize());
+        db.insert(DBHelper.DOWNLOAD_TABLE, null, values);
         db.close();
     }
 
     public Download findDownload(int id) {
         db = dbHelper.getWritableDatabase();
-        db.beginTransaction();
-        Cursor cursor = db.rawQuery("select * from DOWNLOAD_TABLE where _id=?", new String[]{String.valueOf(id)});
+        Cursor cursor = db.rawQuery("select * from DOWNLOAD_TABLE where download_id =?", new String[]{String.valueOf(id)});
         if (cursor.moveToNext()) {
             Download download = new Download();
             download.setId(id);
@@ -136,6 +232,47 @@ public class DBUtils {
             download.setTaskId(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_TASK_ID)));
             download.setUrl(cursor.getString(cursor.getColumnIndex(DBHelper.DOWNLOAD_URL)));
             download.setPath(cursor.getString(cursor.getColumnIndex(DBHelper.DOWNLOAD_PATH)));
+            download.setTime(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_TIME)));
+            download.setFileSize(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_FILE_SIZE)));
+            db.close();
+            return download;
+        }
+        db.close();
+        return null;
+    }
+
+    public Download findDownloadedDownload(String url) {
+        db = dbHelper.getWritableDatabase();
+        Cursor cursor = db.rawQuery("select * from DOWNLOAD_TABLE where download_url =? and download_status =?",
+                new String[]{url, String.valueOf(AppConstant.DOWNLOAD_STATUS_COMPLETE)});
+        if (cursor.moveToNext()) {
+            Download download = new Download();
+            download.setId(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_ID)));
+            download.setStatus(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_STATUS)));
+            download.setTaskId(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_TASK_ID)));
+            download.setUrl(cursor.getString(cursor.getColumnIndex(DBHelper.DOWNLOAD_URL)));
+            download.setPath(cursor.getString(cursor.getColumnIndex(DBHelper.DOWNLOAD_PATH)));
+            download.setTime(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_TIME)));
+            download.setFileSize(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_FILE_SIZE)));
+            db.close();
+            return download;
+        }
+        db.close();
+        return null;
+    }
+
+    public Download findEarliestDownload() {
+        db = dbHelper.getWritableDatabase();
+        Cursor cursor = db.rawQuery("select * from DOWNLOAD_TABLE order by download_time ASC", null);
+        if (cursor.moveToNext()) {
+            Download download = new Download();
+            download.setId(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_ID)));
+            download.setStatus(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_STATUS)));
+            download.setTaskId(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_TASK_ID)));
+            download.setUrl(cursor.getString(cursor.getColumnIndex(DBHelper.DOWNLOAD_URL)));
+            download.setPath(cursor.getString(cursor.getColumnIndex(DBHelper.DOWNLOAD_PATH)));
+            download.setTime(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_TIME)));
+            download.setFileSize(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_FILE_SIZE)));
             db.close();
             return download;
         }
@@ -145,9 +282,8 @@ public class DBUtils {
 
     public List<Download> findAllDownload() {
         db = dbHelper.getWritableDatabase();
-        db.beginTransaction();
         List<Download> downloads = new ArrayList<>();
-        Cursor cursor = db.rawQuery("select * from DOWNLOAD_TABLE", new String[]{});
+        Cursor cursor = db.rawQuery("select * from DOWNLOAD_TABLE", null);
         while (cursor.moveToNext()) {
             Download download = new Download();
             download.setId(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_ID)));
@@ -155,6 +291,8 @@ public class DBUtils {
             download.setTaskId(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_TASK_ID)));
             download.setUrl(cursor.getString(cursor.getColumnIndex(DBHelper.DOWNLOAD_URL)));
             download.setPath(cursor.getString(cursor.getColumnIndex(DBHelper.DOWNLOAD_PATH)));
+            download.setTime(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_TIME)));
+            download.setFileSize(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_FILE_SIZE)));
             downloads.add(download);
         }
         db.close();
@@ -163,7 +301,6 @@ public class DBUtils {
 
     public void deleteDownload(Download download) {
         db = dbHelper.getWritableDatabase();
-        db.beginTransaction();
         int id = download.getId();
         db.delete(DBHelper.DOWNLOAD_TABLE, DBHelper.DOWNLOAD_ID + "=?", new String[]{String.valueOf(id)});
         db.close();
@@ -171,13 +308,15 @@ public class DBUtils {
 
     public void updateDownload(Download download) {
         db = dbHelper.getWritableDatabase();
-        db.beginTransaction();
         int id = download.getId();
         ContentValues values = new ContentValues();
+        values.put(DBHelper.DOWNLOAD_ID, download.getId());
         values.put(DBHelper.DOWNLOAD_TASK_ID, download.getTaskId());
         values.put(DBHelper.DOWNLOAD_STATUS, download.getStatus());
         values.put(DBHelper.DOWNLOAD_URL, download.getUrl());
         values.put(DBHelper.DOWNLOAD_PATH, download.getPath());
+        values.put(DBHelper.DOWNLOAD_TIME, download.getTime());
+        values.put(DBHelper.DOWNLOAD_FILE_SIZE, download.getFileSize());
         db.update(DBHelper.DOWNLOAD_TABLE, values, DBHelper.DOWNLOAD_ID + "=?", new String[]{String.valueOf(id)});
         db.close();
     }

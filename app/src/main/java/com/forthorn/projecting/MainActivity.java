@@ -474,7 +474,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             screenOn();
         } else if (String.valueOf(Event.SCREEN_OFF).equals(text)) {
             screenOff();
-        } else if (String.valueOf(Event.SNAPSHOTS).equals(text)) {
+        } else if (String.valueOf(Event.SNAPSHOT).equals(text)) {
             snapshot();
         } else if (String.valueOf(Event.VOLUME_UP).equals(text)) {
             volumeUp();

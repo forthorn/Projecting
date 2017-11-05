@@ -4,6 +4,9 @@ import android.content.Context;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.Priority;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
 import com.forthorn.projecting.func.picture.BaseViewPagerAdapter;
 
 import java.util.List;
@@ -17,7 +20,8 @@ import java.util.List;
 public class PictureAdapter extends BaseViewPagerAdapter<String> {
 
     private Context mContext;
-
+    private RequestOptions options = new RequestOptions()
+            .diskCacheStrategy(DiskCacheStrategy.DATA);
 
     public PictureAdapter(Context context, List data) {
         super(context, data);
@@ -31,6 +35,6 @@ public class PictureAdapter extends BaseViewPagerAdapter<String> {
 
     @Override
     public void loadImage(ImageView view, int position, String url) {
-        Glide.with(mContext).load(url).into(view);
+        Glide.with(mContext).load(url).apply(options).into(view);
     }
 }

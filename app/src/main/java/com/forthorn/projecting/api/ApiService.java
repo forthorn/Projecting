@@ -76,7 +76,7 @@ public interface ApiService {
      */
     @FormUrlEncoded
     @POST("/api/v1/android/ad/sleep")
-    Observable<BaseResponse> setSleep(
+    Call<BaseResponse> setSleep(
             @Header("Cache-Control") String cacheControl,
             @Field("equipment_id") String equipment_id,
             @Field("equipment_code") String equipment_code
@@ -84,11 +84,11 @@ public interface ApiService {
 
 
     /**
-     * 休眠
+     * 唤醒
      */
     @FormUrlEncoded
     @POST("/api/v1/android/ad/wake_up")
-    Observable<BaseResponse> setWakeUp(
+    Call<BaseResponse> setWakeUp(
             @Header("Cache-Control") String cacheControl,
             @Field("equipment_id") String equipment_id,
             @Field("equipment_code") String equipment_code
@@ -100,15 +100,14 @@ public interface ApiService {
      */
     @Multipart
     @POST("/api/v1/android/ad/upload_z")
-    Observable<BaseResponse> uploadSnapshoot(
+    Call<BaseResponse> uploadSnapshoot(
             @Header("Cache-Control") String cacheControl,
-            @Field("capture_time") String capture_time,
-            @Field("equipment_id") String equipment_id,
-            @Part MultipartBody.Part  attachment);
+            @Part("capture_time") RequestBody capture_time,
+            @Part("equipment_id") RequestBody equipment_id,
+            @Part MultipartBody.Part attachment);
 
 //    MultipartBody.Part avatarPt = MultipartBody.Part.createFormData("file",
 //            Md5Security.getMD5(avatarPath) + ".jpeg", avatarRB);
-
 
 
 }

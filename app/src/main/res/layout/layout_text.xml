@@ -7,6 +7,7 @@
              android:orientation="vertical">
 
     <LinearLayout
+        android:id="@+id/text_ll"
         android:layout_width="match_parent"
         android:layout_height="34dp"
         android:layout_gravity="bottom"
@@ -21,7 +22,14 @@
             android:layout_height="34dp"
             android:layout_weight="1"
             android:background="@drawable/radius_text_bg"
-            android:gravity="center"/>
+            android:ellipsize="marquee"
+            android:gravity="center"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:lines="1"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="@color/colorWhite"/>
 
         <LinearLayout
             android:id="@+id/text_server_holder_ll"

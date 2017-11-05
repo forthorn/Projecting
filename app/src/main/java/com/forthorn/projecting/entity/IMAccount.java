@@ -51,16 +51,16 @@ public class IMAccount {
          * equipment_im_password : dsafdsa
          */
 
-        private String equipment_id;
+        private int equipment_id;
         private String equipment_code;
         private String equipment_im_account;
         private String equipment_im_password;
 
-        public String getEquipment_id() {
+        public int getEquipment_id() {
             return equipment_id;
         }
 
-        public void setEquipment_id(String equipment_id) {
+        public void setEquipment_id(int equipment_id) {
             this.equipment_id = equipment_id;
         }
 

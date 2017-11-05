@@ -8,12 +8,18 @@
     <!-- The primary full-screen view. This can be replaced with whatever view
          is needed to present your content, e.g. VideoView, SurfaceView,
          TextureView, etc. -->
-    <include layout="@layout/layout_video"/>
-
-    <include layout="@layout/layout_picture"/>
-
     <include layout="@layout/layout_idle"/>
 
-    <include layout="@layout/layout_text"/>
+    <include
+        layout="@layout/layout_video"
+        android:visibility="invisible"/>
+
+    <include
+        layout="@layout/layout_picture"
+        android:visibility="invisible"/>
+
+    <include
+        layout="@layout/layout_text"
+        android:visibility="invisible"/>
 
 </FrameLayout>
