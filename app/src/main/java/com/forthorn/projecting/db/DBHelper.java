@@ -22,6 +22,8 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String TASK_CREATE_TIME = "task_create_time";
     public static final String TASK_LAST_MODIFY = "task_last_modify";
     public static final String TASK_CONTENT = "task_content";
+    public static final String TASK_START_TIME = "task_start_time";
+    public static final String TASK_FINISH_TIME = "task_finish_time";
 
     public static final String DOWNLOAD_TABLE = "DOWNLOAD_TABLE";
     public static final String DOWNLOAD_ID = "download_id";
@@ -35,7 +37,9 @@ public class DBHelper extends SQLiteOpenHelper {
 
     private static final String CREATE_TASK_TABLE = "CREATE TABLE IF NOT EXISTS " + TASK_TABLE
             + " ( " + TASK_ID + " integer primary key ," + TASK_DEVICE_ID + " int," + TASK_TYPE + " int," + TASK_STATUS + " int,"
-            + TASK_RUNNING_STATUS + " int," + TASK_CREATE_TIME + " int," + TASK_LAST_MODIFY + " int," + TASK_HOUR + " int," + TASK_DURATION + " int," + TASK_DATE + " int," + TASK_CONTENT + " text" + ")";
+            + TASK_RUNNING_STATUS + " int," + TASK_CREATE_TIME + " int," + TASK_LAST_MODIFY
+            + " int," + TASK_HOUR + " int," + TASK_DURATION + " int," + TASK_DATE + " int," + TASK_CONTENT + " text,"
+            + TASK_START_TIME + " int, " + TASK_FINISH_TIME + " int" + " )";
 
     private static final String CREATE_DOWNLOAD_TABLE = "CREATE TABLE IF NOT EXISTS " + DOWNLOAD_TABLE
             + " ( " + DOWNLOAD_ID + " integer primary key ," + DOWNLOAD_TASK_ID + " int, " + DOWNLOAD_STATUS + " int,"

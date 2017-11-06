@@ -32,6 +32,16 @@ public class Task {
     private int runningStatus;
 
     private Extras extras;
+    /**
+     * volume : null
+     * create_time : null
+     * last_modify : null
+     * start_time : 1508774400
+     * finish_time : 1508774490
+     */
+
+    private int start_time;
+    private int finish_time;
 
     public int getVolume() {
         return volume;
@@ -143,13 +153,29 @@ public class Task {
         this.extras = extras;
     }
 
+    public int getStart_time() {
+        return start_time;
+    }
+
+    public void setStart_time(int start_time) {
+        this.start_time = start_time;
+    }
+
+    public int getFinish_time() {
+        return finish_time;
+    }
+
+    public void setFinish_time(int finish_time) {
+        this.finish_time = finish_time;
+    }
+
     public static class Extras {
 
     }
 
     @Override
     public String toString() {
-        return "TaskMessage{" +
+        return "Task{" +
                 "status=" + status +
                 ", id=" + id +
                 ", type=" + type +
@@ -160,7 +186,10 @@ public class Task {
                 ", duration=" + duration +
                 ", date=" + date +
                 ", content='" + content + '\'' +
+                ", runningStatus=" + runningStatus +
                 ", extras=" + extras +
+                ", start_time=" + start_time +
+                ", finish_time=" + finish_time +
                 ", volume=" + volume +
                 '}';
     }

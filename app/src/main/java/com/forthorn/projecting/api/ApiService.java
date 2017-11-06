@@ -2,6 +2,8 @@ package com.forthorn.projecting.api;
 
 import com.forthorn.projecting.baserx.BaseResponse;
 import com.forthorn.projecting.entity.IMAccount;
+import com.forthorn.projecting.entity.TaskList;
+import com.forthorn.projecting.entity.TaskRes;
 import com.forthorn.projecting.entity.UserList;
 
 import java.io.File;
@@ -50,6 +52,17 @@ public interface ApiService {
     );
 
     /**
+     * 获取整个时段的广告
+     */
+    @FormUrlEncoded
+    @POST("/api/v1/android/ad/ad_time")
+    Call<TaskList> getTaskList(
+            @Header("Cache-Control") String cacheControl,
+            @Field("equipment_id") String equipmentId,
+            @Field("date") String date
+    );
+
+    /**
      * 获取账户密码
      */
     @FormUrlEncoded
@@ -70,6 +83,7 @@ public interface ApiService {
             @Field("equipment_code") String equipment_code,
             @Field("volume") String volume
     );
+
 
     /**
      * 休眠

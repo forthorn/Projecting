@@ -44,6 +44,8 @@ import com.forthorn.projecting.entity.Download;
 import com.forthorn.projecting.entity.Event;
 import com.forthorn.projecting.entity.IMAccount;
 import com.forthorn.projecting.entity.Task;
+import com.forthorn.projecting.entity.TaskList;
+import com.forthorn.projecting.entity.TaskRes;
 import com.forthorn.projecting.func.picture.AutoViewPager;
 import com.forthorn.projecting.func.picture.PictureAdapter;
 import com.forthorn.projecting.receiver.AlarmReceiver;
@@ -58,7 +60,10 @@ import com.pili.pldroid.player.widget.PLVideoTextureView;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import cn.jpush.im.android.api.JMessageClient;
@@ -128,6 +133,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private static final int REQUEST_CODE_ADMIN = 0x1;
     private static final int HANDLER_MESSAGE_TIMING_LOGIN = 0X2;
     private static final int HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT = 0X3;
+    private static final int HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE = 0X4;
+
+    private long nextHourTimeStamp = 0L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -145,6 +153,32 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         queryTask();
         //每十分钟登录一下
         mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000);
+        setRequestAlarm();
+    }
+
+
+    private long getNextHourStamp() {
+        Calendar cal = Calendar.getInstance();
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+        cal.set(Calendar.HOUR_OF_DAY, hour + 1);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        long nextHourTime = cal.getTimeInMillis();
+        return nextHourTime / 1000L;
+    }
+
+    private void setRequestAlarm() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
+        Log.e("Alarm", "现在是：" + sdf.format(new Date()));
+        Toast.makeText(mContext, "现在是：" + sdf.format(new Date()), Toast.LENGTH_SHORT).show();
+        nextHourTimeStamp = getNextHourStamp();
+        Toast.makeText(mContext, "下一个整点是：" + sdf.format(new Date(nextHourTimeStamp * 1000L)), Toast.LENGTH_SHORT).show();
+        Log.e("Alarm", "下一个整点是：" + sdf.format(new Date(nextHourTimeStamp * 1000L)));
+        Toast.makeText(mContext, "下一个请求将在：" + sdf.format(new Date(nextHourTimeStamp * 1000L - 300000L)), Toast.LENGTH_SHORT).show();
+        Log.e("Alarm", "下一个请求将在：" + sdf.format(new Date(nextHourTimeStamp * 1000L - 300000L)));
+        Log.e("Alarm", (nextHourTimeStamp * 1000L - 300000L - System.currentTimeMillis()) / 1000 + "秒后请求");
+        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE, nextHourTimeStamp * 1000L - 300000L - System.currentTimeMillis());
     }
 
 
@@ -155,14 +189,68 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             switch (msg.what) {
                 case HANDLER_MESSAGE_TIMING_LOGIN:
                     requestIMAccount();
-                    mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000);
+                    mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000L);
                     break;
                 case HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT:
                     requestIMAccount();
                     break;
+                case HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE:
+                    requestTasks();
+                    mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE, 3600000L);
+                    break;
             }
         }
     };
+
+    /**
+     * 获取任务
+     */
+    private void requestTasks() {
+        nextHourTimeStamp = getNextHourStamp();
+        if (mDeviceId == 0) {
+            return;
+        }
+        Call<TaskList> taskResCall = Api.getDefault(HostType.VOM_HOST).getTaskList(Api.getCacheControl(),
+                String.valueOf(mDeviceId), String.valueOf(nextHourTimeStamp));
+
+        taskResCall.enqueue(new Callback<TaskList>() {
+            @Override
+            public void onResponse(Call<TaskList> call, Response<TaskList> response) {
+                Log.e("查询任务", "结果：" + response.toString());
+
+                TaskList taskRes = response.body();
+                if (taskRes == null) {
+                    return;
+                }
+                Log.e("查询任务", "结果：" + taskRes.toString());
+                if (taskRes.getData() == null) {
+                    return;
+                }
+                for (TaskList.Data data : taskRes.getData()) {
+                    Task task = new Task();
+                    task.setId(data.getId());
+                    task.setCreate_time(data.getCreate_time());
+                    task.setStatus(data.getStatus());
+                    task.setFinish_time(data.getFinish_time());
+                    task.setDate(data.getDate());
+                    task.setEquip_id(data.getEquip_id());
+                    task.setContent(data.getContent());
+                    task.setDuration(data.getDuration());
+                    task.setStart_time(data.getStart_time());
+                    task.setType(data.getType());
+                    task.setHour(data.getHour());
+                    task.setLast_modify(data.getLast_modify());
+                    handleTask(task);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<TaskList> call, Throwable t) {
+                Log.e("查询任务", "结果：" + t.getMessage());
+            }
+        });
+    }
+
 
     private void queryTask() {
         DBUtils.getInstance().deleteOverdueTask();
@@ -229,6 +317,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mIdleQrcodeTv = (TextView) findViewById(R.id.idle_qrcode_tv);
         mIdleServerStatusLl = (LinearLayout) findViewById(R.id.idle_server_status_ll);
         mIdleServerStatusTv = (TextView) findViewById(R.id.idle_server_status_tv);
+//        mIdleAboutIv.requestFocus();
         //文字
         mTextFl = (FrameLayout) findViewById(R.id.text_fl);
         mTextLl = (LinearLayout) findViewById(R.id.text_ll);
@@ -246,7 +335,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
         mUuid = uuidFactory.getDeviceUuid().toString();
         // TODO: 2017/11/3
-//        mUuid = "11211";
+        mUuid = "11211";
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
 
@@ -301,11 +390,17 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mIMPassword = imAccount.getData().getEquipment_im_password();
                 mDeviceId = imAccount.getData().getEquipment_id();
                 mDeviceCode = imAccount.getData().getEquipment_code();
+                SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_ADDRESS, imAccount.getData().getAddress());
+                SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_NAME, imAccount.getData().getEquipment_name());
+                SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_AREA,
+                        imAccount.getData().getProvince() + "  " + imAccount.getData().getCity());
+                SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_TYPE, imAccount.getData().getType());
                 SPUtils.setSharedStringData(mContext, BundleKey.IM_ACCOUNT, mIMUsername);
                 SPUtils.setSharedStringData(mContext, BundleKey.IM_PASSWORD, mIMPassword);
                 SPUtils.setSharedIntData(mContext, BundleKey.DEVICE_ID, mDeviceId);
                 SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mDeviceCode);
                 login();
+                requestTasks();
             }
 
             @Override
@@ -564,7 +659,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         intent.putExtra(AppConstant.TASK_RUNNING_STATUS, task.getRunningStatus());
         PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, task.getId(),
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        mAlarmManager.set(AlarmManager.RTC_WAKEUP, task.getDate() * 1000L, pendingIntent);
+        mAlarmManager.set(AlarmManager.RTC_WAKEUP, task.getStart_time() * 1000L, pendingIntent);
     }
 
 
@@ -592,8 +687,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         intent.putExtra(AppConstant.TASK_RUNNING_STATUS, task.getRunningStatus());
         PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, task.getId(),
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        mAlarmManager.set(AlarmManager.RTC_WAKEUP, (task.getDate() + task.getDuration()) * 1000L - 200L, pendingIntent);
-        Log.e("addFinishAlarmTask", "Task时间：" + task.getDate() * 1000L);
+        mAlarmManager.set(AlarmManager.RTC_WAKEUP, task.getFinish_time() * 1000L - 200L, pendingIntent);
+        Log.e("addFinishAlarmTask", "Task时间：" + task.getFinish_time() * 1000L);
     }
 
     /**
@@ -609,8 +704,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         intent.putExtra(AppConstant.TASK_RUNNING_STATUS, task.getRunningStatus());
         PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, task.getId(),
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        mAlarmManager.set(AlarmManager.RTC_WAKEUP, task.getDate() * 1000L, pendingIntent);
-        Log.e("addAlarmTask", "Task时间：" + task.getDate() * 1000L);
+        mAlarmManager.set(AlarmManager.RTC_WAKEUP, task.getStart_time() * 1000L, pendingIntent);
+        Log.e("addAlarmTask", "Task时间：" + task.getStart_time() * 1000L);
     }
 
 
@@ -732,7 +827,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         int current = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         Log.e("Volume", "Task:" + volume + "__Current:" + current + "__Target:" + targetVolume);
         Call<BaseResponse> volumeCall = Api.getDefault(HostType.VOM_HOST).setVolume(Api.getCacheControl(),
-                String.valueOf(mDeviceId), mDeviceCode, String.valueOf(targetVolume));
+                String.valueOf(mDeviceId), mDeviceCode, String.valueOf(volume));
         volumeCall.enqueue(new Callback<BaseResponse>() {
             @Override
             public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
@@ -765,6 +860,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         task.setStatus(AppConstant.TASK_STATUS_ADD);
         task.setRunningStatus(AppConstant.TASK_RUNNING_STATUS_READY);
         task.setDate((int) ((System.currentTimeMillis() + 10000L) / 1000L));
+        task.setStart_time((int) ((System.currentTimeMillis() + 10000L) / 1000L));
+        task.setFinish_time((int) ((System.currentTimeMillis() + 10000L + 60000L) / 1000L));
         task.setDuration(60);
 //        task.setContent("http://p1.wmpic.me/article/2015/04/10/1428655515_xYwBQLzs.jpg");
         task.setContent("http://p2.wmpic.me/article/2015/04/10/1428655516_cTGyxgAF.jpg");
@@ -784,6 +881,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         task.setStatus(AppConstant.TASK_STATUS_ADD);
         task.setRunningStatus(AppConstant.TASK_RUNNING_STATUS_READY);
         task.setDate((int) ((System.currentTimeMillis() + 10000L) / 1000L));
+        task.setStart_time((int) ((System.currentTimeMillis() + 10000L) / 1000L));
+        task.setFinish_time((int) ((System.currentTimeMillis() + 10000L + 60000L) / 1000L));
         task.setDuration(60);
         task.setContent("2017年11月05日发布下午天气预报 全省天气:今天晚上到明天赣州、萍乡两市和吉安市西部多云转阴，全省其他地区晴天转多云。风向：偏北，风力：2～3级。");
 //        task.setContent("http://p2.wmpic.me/article/2015/04/10/1428655516_cTGyxgAF.jpg");
@@ -803,6 +902,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         task.setStatus(AppConstant.TASK_STATUS_ADD);
         task.setRunningStatus(AppConstant.TASK_RUNNING_STATUS_READY);
         task.setDate((int) ((System.currentTimeMillis() + 15000L) / 1000L));
+        task.setStart_time((int) ((System.currentTimeMillis() + 10000L) / 1000L));
+        task.setFinish_time((int) ((System.currentTimeMillis() + 10000L + 60000L) / 1000L));
         task.setDuration(180);
         task.setContent("http://vf2.mtime.cn/Video/2017/03/31/mp4/170331093811717750.mp4");
         Log.e("mockVideo", task.toString());
@@ -1151,6 +1252,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             return;
         }
         Log.e("executeTask", task.toString());
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
+        Toast.makeText(mContext, "执行：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), Toast.LENGTH_SHORT).show();
         switch (task.getType()) {
             case AppConstant.TASK_TYPE_PICTURE:
                 if (mStatus == Status.VIDEO_TEXT
@@ -1237,6 +1340,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         if (task == null) {
             return;
         }
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
+        Toast.makeText(mContext, "结束：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), Toast.LENGTH_SHORT).show();
         task.setRunningStatus(AppConstant.TASK_RUNNING_STATUS_FINISH);
         DBUtils.getInstance().updateTask(task);
         deleteAlarmTask(task);

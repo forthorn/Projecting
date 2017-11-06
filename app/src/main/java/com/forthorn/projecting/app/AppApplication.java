@@ -1,8 +1,14 @@
 package com.forthorn.projecting.app;
 
 import android.app.Application;
+import android.os.Environment;
+import android.support.v4.BuildConfig;
 
+import com.forthorn.projecting.HomeActivity;
+import com.forthorn.projecting.R;
 import com.liulishuo.filedownloader.FileDownloader;
+import com.tencent.bugly.Bugly;
+import com.tencent.bugly.beta.Beta;
 
 import cn.jpush.im.android.api.JMessageClient;
 
@@ -24,6 +30,7 @@ public class AppApplication extends Application {
         JMessageClient.setDebugMode(true);
         JMessageClient.setNotificationFlag(JMessageClient.FLAG_NOTIFY_WITH_LED | JMessageClient.FLAG_NOTIFY_WITH_VIBRATE);
         FileDownloader.setup(this);
+        initBugly();
     }
 
     public static AppApplication getApplication() {
@@ -34,5 +41,15 @@ public class AppApplication extends Application {
         return mAppApplication;
     }
 
-
+    private void initBugly() {
+        Beta.autoInit = true;
+        Beta.autoCheckUpgrade = true;
+        Beta.upgradeCheckPeriod = 60 * 1000;
+        Beta.initDelay = 3 * 1000;
+        Beta.smallIconId = R.mipmap.ic_launcher;
+        Beta.storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        Beta.showInterruptedStrategy = true;
+        Beta.canShowUpgradeActs.add(HomeActivity.class);
+        Bugly.init(getApplicationContext(), "a153c22bee", BuildConfig.DEBUG);
+    }
 }

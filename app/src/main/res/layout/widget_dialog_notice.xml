@@ -49,6 +49,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="#2C72FF"
+                android:focusable="true"
                 android:text="取消"
                 android:textColor="@color/colorWhite"/>
 
@@ -62,6 +63,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="#3c3c3c"
+                android:focusable="true"
                 android:text="确认"
                 android:textColor="@color/colorWhite"/>
         </LinearLayout>

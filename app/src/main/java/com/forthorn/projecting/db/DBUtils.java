@@ -37,8 +37,12 @@ public class DBUtils {
 
 
     public void insertTask(Task task) {
+        Task oldTask = findTask(task.getId());
+        if (oldTask != null) {
+            updateTask(task);
+            return;
+        }
         db = dbHelper.getWritableDatabase();
-//        db.beginTransaction();
         ContentValues values = new ContentValues();
         values.put(DBHelper.TASK_ID, task.getId());
         values.put(DBHelper.TASK_TYPE, task.getType());
@@ -51,6 +55,8 @@ public class DBUtils {
         values.put(DBHelper.TASK_DURATION, task.getDuration());
         values.put(DBHelper.TASK_DATE, task.getDate());
         values.put(DBHelper.TASK_CONTENT, task.getContent());
+        values.put(DBHelper.TASK_START_TIME, task.getStart_time());
+        values.put(DBHelper.TASK_FINISH_TIME, task.getFinish_time());
         Log.e("ContentValues", values.toString());
         Log.e("插入Task", task.toString());
         db.insert(DBHelper.TASK_TABLE, null, values);
@@ -73,6 +79,8 @@ public class DBUtils {
         values.put(DBHelper.TASK_DURATION, task.getDuration());
         values.put(DBHelper.TASK_DATE, task.getDate());
         values.put(DBHelper.TASK_CONTENT, task.getContent());
+        values.put(DBHelper.TASK_START_TIME, task.getStart_time());
+        values.put(DBHelper.TASK_FINISH_TIME, task.getFinish_time());
         db.update(DBHelper.TASK_TABLE, values, DBHelper.TASK_ID + "=?", new String[]{String.valueOf(task.getId())});
         Log.e("更新Task", task.toString());
         db.close();
@@ -103,6 +111,8 @@ public class DBUtils {
             task.setDuration(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DURATION)));
             task.setDate(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DATE)));
             task.setContent(cursor.getString(cursor.getColumnIndex(DBHelper.TASK_CONTENT)));
+            task.setStart_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_START_TIME)));
+            task.setFinish_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_FINISH_TIME)));
             db.close();
             return task;
         }
@@ -128,6 +138,8 @@ public class DBUtils {
             task.setDuration(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DURATION)));
             task.setDate(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DATE)));
             task.setContent(cursor.getString(cursor.getColumnIndex(DBHelper.TASK_CONTENT)));
+            task.setStart_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_START_TIME)));
+            task.setFinish_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_FINISH_TIME)));
             tasks.add(task);
         }
         return tasks;
@@ -139,7 +151,7 @@ public class DBUtils {
         db.beginTransaction();
         try {
             int time = (int) (System.currentTimeMillis() / 1000L);
-            Cursor cursor = db.rawQuery("select * from TASK_TABLE where task_date <= " + time, null);
+            Cursor cursor = db.rawQuery("select * from TASK_TABLE where task_finish_time < " + time, null);
             while (cursor.moveToNext()) {
                 Task task = new Task();
                 task.setId(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_ID)));
@@ -153,11 +165,11 @@ public class DBUtils {
                 task.setDuration(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DURATION)));
                 task.setDate(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DATE)));
                 task.setContent(cursor.getString(cursor.getColumnIndex(DBHelper.TASK_CONTENT)));
-                if (task.getDate() + task.getDuration() < time) {
-                    db.delete(DBHelper.TASK_TABLE, DBHelper.TASK_ID + "=?",
-                            new String[]{String.valueOf(task.getId())});
-                    Log.e("删除过期Task", task.toString());
-                }
+                task.setStart_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_START_TIME)));
+                task.setFinish_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_FINISH_TIME)));
+                db.delete(DBHelper.TASK_TABLE, DBHelper.TASK_ID + "=?",
+                        new String[]{String.valueOf(task.getId())});
+                Log.e("删除过期Task", task.toString());
             }
             db.setTransactionSuccessful();
         } catch (Exception e) {
@@ -173,7 +185,7 @@ public class DBUtils {
         db.beginTransaction();
         try {
             int time = (int) (System.currentTimeMillis() / 1000L);
-            Cursor cursor = db.rawQuery("select * from TASK_TABLE where task_date <= " + time, null);
+            Cursor cursor = db.rawQuery("select * from TASK_TABLE where task_start_time <= " + time, null);
             while (cursor.moveToNext()) {
                 Task task = new Task();
                 task.setId(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_ID)));
@@ -187,7 +199,7 @@ public class DBUtils {
                 task.setDuration(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DURATION)));
                 task.setDate(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DATE)));
                 task.setContent(cursor.getString(cursor.getColumnIndex(DBHelper.TASK_CONTENT)));
-                if (task.getDate() + task.getDuration() < time) {
+                if (task.getFinish_time() < time) {
                     db.delete(DBHelper.TASK_TABLE, DBHelper.TASK_ID + " =?",
                             new String[]{String.valueOf(task.getId())});
                     Log.e("查暂停-删过期Task", task.toString());
