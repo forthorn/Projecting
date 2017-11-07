@@ -169,7 +169,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     }
 
     private void setRequestAlarm() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
         Log.e("Alarm", "现在是：" + sdf.format(new Date()));
         Toast.makeText(mContext, "现在是：" + sdf.format(new Date()), Toast.LENGTH_SHORT).show();
         nextHourTimeStamp = getNextHourStamp();
@@ -188,6 +188,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             super.handleMessage(msg);
             switch (msg.what) {
                 case HANDLER_MESSAGE_TIMING_LOGIN:
+                    Toast.makeText(mContext, "每十分钟登录一次", Toast.LENGTH_SHORT).show();
                     requestIMAccount();
                     mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000L);
                     break;
@@ -195,7 +196,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     requestIMAccount();
                     break;
                 case HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE:
-                    requestTasks();
+                    Toast.makeText(mContext, "提前请求下一个时间段任务", Toast.LENGTH_SHORT).show();
+                    nextHourTimeStamp = getNextHourStamp();
+                    requestTasks(nextHourTimeStamp);
                     mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE, 3600000L);
                     break;
             }
@@ -205,47 +208,36 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     /**
      * 获取任务
      */
-    private void requestTasks() {
-        nextHourTimeStamp = getNextHourStamp();
+    private void requestTasks(Long timeStamp) {
         if (mDeviceId == 0) {
             return;
         }
-        Call<TaskList> taskResCall = Api.getDefault(HostType.VOM_HOST).getTaskList(Api.getCacheControl(),
-                String.valueOf(mDeviceId), String.valueOf(nextHourTimeStamp));
-
-        taskResCall.enqueue(new Callback<TaskList>() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm");
+        Toast.makeText(mContext, "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务", Toast.LENGTH_SHORT).show();
+        Call<TaskRes> taskResCall = Api.getDefault(HostType.VOM_HOST).getTaskList(Api.getCacheControl(),
+                String.valueOf(mDeviceId), String.valueOf(timeStamp));
+        taskResCall.enqueue(new Callback<TaskRes>() {
             @Override
-            public void onResponse(Call<TaskList> call, Response<TaskList> response) {
+            public void onResponse(Call<TaskRes> call, Response<TaskRes> response) {
                 Log.e("查询任务", "结果：" + response.toString());
-
-                TaskList taskRes = response.body();
+                TaskRes taskRes = response.body();
                 if (taskRes == null) {
+                    Toast.makeText(mContext, "查询失败：空", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 Log.e("查询任务", "结果：" + taskRes.toString());
-                if (taskRes.getData() == null) {
+                if (taskRes.getData() == null || taskRes.getData().isEmpty()) {
+                    Toast.makeText(mContext, "查询：当前任务数为：0", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                for (TaskList.Data data : taskRes.getData()) {
-                    Task task = new Task();
-                    task.setId(data.getId());
-                    task.setCreate_time(data.getCreate_time());
-                    task.setStatus(data.getStatus());
-                    task.setFinish_time(data.getFinish_time());
-                    task.setDate(data.getDate());
-                    task.setEquip_id(data.getEquip_id());
-                    task.setContent(data.getContent());
-                    task.setDuration(data.getDuration());
-                    task.setStart_time(data.getStart_time());
-                    task.setType(data.getType());
-                    task.setHour(data.getHour());
-                    task.setLast_modify(data.getLast_modify());
+                Toast.makeText(mContext, "查询：当前任务数为：" + taskRes.getData().size(), Toast.LENGTH_SHORT).show();
+                for (Task task : taskRes.getData()) {
                     handleTask(task);
                 }
             }
 
             @Override
-            public void onFailure(Call<TaskList> call, Throwable t) {
+            public void onFailure(Call<TaskRes> call, Throwable t) {
                 Log.e("查询任务", "结果：" + t.getMessage());
             }
         });
@@ -340,12 +332,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mDeviceCode = mUuid;
 
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
-        mIdleAboutIv.setImageResource(TextUtils.isEmpty(mDeviceCode) ? R.drawable.ic_info_notice : R.drawable.ic_info_normal);
+//        mIdleAboutIv.setImageResource(TextUtils.isEmpty(mDeviceCode) ? R.drawable.ic_info_notice : R.drawable.ic_info_normal);
         Glide.with(mContext).load(R.drawable.ic_idle_bg).into(mIdleBgIv);
+        mIdleBgIv.requestFocus();
 //        mPicList.add("https://img11.360buyimg.com/da/jfs/t9595/285/2471111611/183642/3aad4810/59f7e3afN583ea737.jpg");
 //        mPictureAdapter = new PictureAdapter(mContext, mPicList);
 //        mPicturePager.setAdapter(mPictureAdapter);
 //        mPicturePager.start();
+//        mIdleAboutIv.requestFocus();
         mStatus = IDLE;
 //        mIdleFl.setVisibility(View.INVISIBLE);
 
@@ -400,7 +394,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 SPUtils.setSharedIntData(mContext, BundleKey.DEVICE_ID, mDeviceId);
                 SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mDeviceCode);
                 login();
-                requestTasks();
+                nextHourTimeStamp = getNextHourStamp();
+                requestTasks(nextHourTimeStamp - 3600L);
             }
 
             @Override
@@ -624,12 +619,16 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * @param task
      */
     private void handWeatherTask(Task task) {
-
+        handleTask(task);
     }
 
 
     private void handleTask(Task task) {
         Log.e("handleTask", "开始处理任务");
+        if (task.getFinish_time() < System.currentTimeMillis() / 1000L) {
+            Toast.makeText(mContext, "查询到任务id为" + task.getId() + "的任务已过期，自动跳过", Toast.LENGTH_SHORT).show();
+            return;
+        }
         int status = task.getStatus();
         switch (status) {
             case AppConstant.TASK_STATUS_ADD:
@@ -689,6 +688,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 intent, PendingIntent.FLAG_UPDATE_CURRENT);
         mAlarmManager.set(AlarmManager.RTC_WAKEUP, task.getFinish_time() * 1000L - 200L, pendingIntent);
         Log.e("addFinishAlarmTask", "Task时间：" + task.getFinish_time() * 1000L);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
+        Toast.makeText(mContext, "设定：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)) + "结束当前任务", Toast.LENGTH_SHORT).show();
+
     }
 
     /**

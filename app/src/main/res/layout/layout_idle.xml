@@ -11,6 +11,12 @@
         android:id="@+id/idle_bg_iv"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:nextFocusDown="@+id/idle_about_iv"
+        android:nextFocusLeft="@+id/idle_about_iv"
+        android:nextFocusRight="@+id/idle_about_iv"
+        android:nextFocusUp="@+id/idle_about_iv"
         android:scaleType="fitXY"
         tools:src="@drawable/ic_idle_bg"/>
 

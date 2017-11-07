@@ -52,6 +52,7 @@ public class AboutActivity extends Activity implements View.OnClickListener {
         mAboutAddressTv.setText(mAddress);
         mAboutTypeTv.setText(mType);
         mAboutIdTv.setText("标识码:" + mCode);
+        mAboutNameTv.requestFocus();
     }
 
     private void initView() {

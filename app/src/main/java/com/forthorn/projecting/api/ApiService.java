@@ -56,7 +56,7 @@ public interface ApiService {
      */
     @FormUrlEncoded
     @POST("/api/v1/android/ad/ad_time")
-    Call<TaskList> getTaskList(
+    Call<TaskRes> getTaskList(
             @Header("Cache-Control") String cacheControl,
             @Field("equipment_id") String equipmentId,
             @Field("date") String date

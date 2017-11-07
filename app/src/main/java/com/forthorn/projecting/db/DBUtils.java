@@ -199,6 +199,8 @@ public class DBUtils {
                 task.setDuration(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DURATION)));
                 task.setDate(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DATE)));
                 task.setContent(cursor.getString(cursor.getColumnIndex(DBHelper.TASK_CONTENT)));
+                task.setStart_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_START_TIME)));
+                task.setFinish_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_FINISH_TIME)));
                 if (task.getFinish_time() < time) {
                     db.delete(DBHelper.TASK_TABLE, DBHelper.TASK_ID + " =?",
                             new String[]{String.valueOf(task.getId())});
