@@ -20,6 +20,7 @@ import android.os.PowerManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Display;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -327,7 +328,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
         mUuid = uuidFactory.getDeviceUuid().toString();
         // TODO: 2017/11/3
-        mUuid = "11211";
+//        mUuid = "11211";
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
 
@@ -690,7 +691,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         Log.e("addFinishAlarmTask", "Task时间：" + task.getFinish_time() * 1000L);
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
         Toast.makeText(mContext, "设定：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)) + "结束当前任务", Toast.LENGTH_SHORT).show();
-
     }
 
     /**
@@ -1258,6 +1258,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         Toast.makeText(mContext, "执行：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), Toast.LENGTH_SHORT).show();
         switch (task.getType()) {
             case AppConstant.TASK_TYPE_PICTURE:
+                if (mPicturePager.getTag().equals(task.getId())) {
+                    return;
+                }
                 if (mStatus == Status.VIDEO_TEXT
                         || mStatus == Status.PICTURE_TEXT
                         || mStatus == Status.IDLE_TEXT) {
@@ -1271,6 +1274,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 playPicture(task);
                 break;
             case AppConstant.TASK_TYPE_TEXT:
+                if (mTextTv.getTag().equals(task.getId())) {
+                    return;
+                }
                 if (mStatus == Status.VIDEO) {
                     mStatus = Status.VIDEO_TEXT;
                     mPicturePager.stop();
@@ -1286,6 +1292,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 playText(task);
                 break;
             case AppConstant.TASK_TYPE_VIDEO:
+                if (mVideoView.getTag().equals(task.getId())) {
+                    return;
+                }
                 if (mStatus == Status.VIDEO_TEXT
                         || mStatus == Status.PICTURE_TEXT
                         || mStatus == Status.IDLE_TEXT) {
@@ -1297,6 +1306,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 playVideo(task);
                 break;
             case AppConstant.TASK_TYPE_WEATHER:
+                if (mTextTv.getTag().equals(task.getId())) {
+                    return;
+                }
                 if (mStatus == Status.VIDEO) {
                     mStatus = Status.VIDEO_TEXT;
                     mPicturePager.stop();
@@ -1483,5 +1495,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 Toast.makeText(mContext, "当前状态：文字", Toast.LENGTH_SHORT).show();
                 break;
         }
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        Toast.makeText(mContext, "按下了" + keyCode, Toast.LENGTH_SHORT).show();
+        if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_M) {
+            goToAbout();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 }

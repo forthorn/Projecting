@@ -48,8 +48,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="#2C72FF"
+                android:background="@drawable/dialog_notice_btn_selector"
                 android:focusable="true"
+                android:nextFocusDown="@+id/dialog_positive_btn"
+                android:nextFocusRight="@+id/dialog_positive_btn"
                 android:text="取消"
                 android:textColor="@color/colorWhite"/>
 
@@ -62,8 +64,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="#3c3c3c"
+                android:background="@drawable/dialog_notice_btn_selector"
                 android:focusable="true"
+                android:nextFocusForward="@+id/dialog_negative_btn"
+                android:nextFocusLeft="@+id/dialog_negative_btn"
                 android:text="确认"
                 android:textColor="@color/colorWhite"/>
         </LinearLayout>

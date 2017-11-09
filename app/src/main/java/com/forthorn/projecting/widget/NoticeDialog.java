@@ -59,7 +59,7 @@ public class NoticeDialog implements View.OnClickListener {
         mDialog.setCanceledOnTouchOutside(false);
         mNegativeBtn.setOnClickListener(this);
         mPositiveBtn.setOnClickListener(this);
-
+        mPositiveBtn.requestFocus();
     }
 
 
