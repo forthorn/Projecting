@@ -1258,9 +1258,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         Toast.makeText(mContext, "执行：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), Toast.LENGTH_SHORT).show();
         switch (task.getType()) {
             case AppConstant.TASK_TYPE_PICTURE:
-                if (mPicturePager.getTag().equals(task.getId())) {
-                    return;
-                }
                 if (mStatus == Status.VIDEO_TEXT
                         || mStatus == Status.PICTURE_TEXT
                         || mStatus == Status.IDLE_TEXT) {
@@ -1268,15 +1265,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 } else {
                     mStatus = Status.PICTURE;
                 }
+                refreshStatus();
+                if (mPicturePager.getTag().equals(task.getId())) {
+                    return;
+                }
                 mVideoView.pause();
                 mPicturePager.stop();
-                refreshStatus();
                 playPicture(task);
                 break;
             case AppConstant.TASK_TYPE_TEXT:
-                if (mTextTv.getTag().equals(task.getId())) {
-                    return;
-                }
                 if (mStatus == Status.VIDEO) {
                     mStatus = Status.VIDEO_TEXT;
                     mPicturePager.stop();
@@ -1289,12 +1286,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     mStatus = Status.IDLE_TEXT;
                 }
                 refreshStatus();
+                if (mTextTv.getTag().equals(task.getId())) {
+                    return;
+                }
                 playText(task);
                 break;
             case AppConstant.TASK_TYPE_VIDEO:
-                if (mVideoView.getTag().equals(task.getId())) {
-                    return;
-                }
                 if (mStatus == Status.VIDEO_TEXT
                         || mStatus == Status.PICTURE_TEXT
                         || mStatus == Status.IDLE_TEXT) {
@@ -1303,12 +1300,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     mStatus = Status.VIDEO;
                 }
                 refreshStatus();
+                if (mVideoView.getTag().equals(task.getId())) {
+                    return;
+                }
                 playVideo(task);
                 break;
             case AppConstant.TASK_TYPE_WEATHER:
-                if (mTextTv.getTag().equals(task.getId())) {
-                    return;
-                }
                 if (mStatus == Status.VIDEO) {
                     mStatus = Status.VIDEO_TEXT;
                     mPicturePager.stop();
@@ -1321,6 +1318,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     mStatus = Status.IDLE_TEXT;
                 }
                 refreshStatus();
+                if (mTextTv.getTag().equals(task.getId())) {
+                    return;
+                }
                 playText(task);
 //                handWeatherTask(task);
                 break;
