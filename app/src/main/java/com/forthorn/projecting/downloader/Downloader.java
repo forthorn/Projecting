@@ -44,7 +44,9 @@ public class Downloader {
         download.setTime((int) (System.currentTimeMillis() / 1000L));
         download.setUrl(task.getContent());
         download.setTaskId(task.getId());
-        DBUtils.getInstance().insertDownload(download);
+        if (DBUtils.getInstance().findDownload(download.getId()) == null) {
+            DBUtils.getInstance().insertDownload(download);
+        }
         FileDownloader.getImpl().create(task.getContent())
                 .setPath(dir + File.separator + fileName, false)
                 .setTag(new Integer(task.getId()))

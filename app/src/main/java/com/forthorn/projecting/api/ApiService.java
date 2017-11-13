@@ -41,6 +41,18 @@ public interface ApiService {
 
 
     /**
+     * 统一更新信息
+     */
+    @FormUrlEncoded
+    @POST("/v1/android/ad/update_ad_status")
+    Call<BaseResponse> updateStatus(
+            @Header("Cache-Control") String cacheControl,
+            @Field("equipment_id") int equipmentId,
+            @Field("is_sleep") int isSleep,
+            @Field("volume") int volume
+    );
+
+    /**
      * 获取天气
      */
     @FormUrlEncoded

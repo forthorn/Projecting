@@ -18,6 +18,9 @@ public interface BundleKey {
     public static final String IM_ACCOUNT = "IM_ACCOUNT";
     public static final String IM_PASSWORD = "IM_PASSWORD";
 
+    public static final String KEY_VIDEO = "KEY_VIDEO";
+
+
     public static final String Cid = "cid";
     public static final String Uid = "uid";
     public static final String Gid = "gid";

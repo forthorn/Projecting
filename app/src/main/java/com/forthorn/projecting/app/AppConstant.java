@@ -28,9 +28,13 @@ public class AppConstant {
     public static final int DOWNLOAD_STATUS_DOWNLOADING = 1;
     public static final int DOWNLOAD_STATUS_COMPLETE = 2;
 
+    public static final int STATUS_WAKE_UP = 0;
+    public static final int STATUS_SLEEP = 1;
 
     public static final String ALARM_INTENT = "com.forthorn.projecting";
     public static final String TASK_ID = "TASK_ID";
     public static final String TASK_RUNNING_STATUS = "TASK_RUNNING_STATUS";
     public static final String TASK_TYPE = "TASK_TYPE";
+
+
 }
