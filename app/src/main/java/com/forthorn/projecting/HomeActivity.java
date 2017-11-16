@@ -64,9 +64,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import cn.jpush.im.android.api.JMessageClient;
 import cn.jpush.im.android.api.callback.IntegerCallback;
@@ -140,7 +140,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private long nextHourTimeStamp = 0L;
     private List<Integer> mTaskIdList = new ArrayList<>();
 
-    private Map<Integer, Integer> mTaskIds = new TreeMap<>();
+    private Map<Integer, Integer> mTaskIds = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -165,7 +165,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         if (mDeviceId != 0) {
             int current = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
             int maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-            int targetVolume = (int) Math.ceil(current * 100D / maxVolume);
+            int targetVolume = 0;
+            if (maxVolume == 100) {
+                targetVolume = current;
+            } else {
+                targetVolume = (int) Math.ceil(current * 100D / maxVolume);
+            }
             Call<BaseResponse> updateCall = Api.getDefault(HostType.VOM_HOST).updateStatus(Api.getCacheControl(),
                     mDeviceId, AppConstant.STATUS_WAKE_UP, targetVolume);
             updateCall.enqueue(new Callback<BaseResponse>() {
@@ -348,7 +353,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initData() {
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
         mUuid = uuidFactory.getDeviceUuid().toString();
-        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
+//        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
@@ -849,7 +854,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void adjustVolume(Task task) {
         int volume = task.getVolume();
         int maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int targetVolume = (int) Math.ceil(volume * maxVolume / 100D);
+        int targetVolume = 0;
+        if (maxVolume == 100) {
+            targetVolume = volume;
+        } else {
+            targetVolume = (int) Math.ceil(volume * 100D / maxVolume);
+        }
         mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, 0);
         int current = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         Log.e("Volume", "Task:" + volume + "__Current:" + current + "__Target:" + targetVolume);
@@ -868,14 +878,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 Log.e("adjustVolume", t.getMessage() == null ? "调节音量失败" : t.getMessage());
             }
         });
-
-        if (volume <= 11) {
-            mockPicture();
-        } else if (volume <= 21) {
-            mockVideo();
-        } else if (volume <= 31) {
-            mockText();
-        }
     }
 
     private void mockPicture() {
@@ -937,7 +939,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         Toast.makeText(mContext, "模拟视频任务：" + task.toString(), Toast.LENGTH_SHORT).show();
         Downloader.getInstance().download(task);
         handleTask(task);
-
     }
 
 
@@ -1084,7 +1085,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             return mVideoView.getTextureView().getBitmap();
         } else if (mStatus == Status.VIDEO_TEXT) {
             Bitmap videoBitmap = mVideoView.getTextureView().getBitmap();
-            return compositeBitmap(videoBitmap, mTextLl);
+            return compositeBitmap(videoBitmap, mTextTv);
         } else {
             WindowManager windowManager = getWindowManager();
             Display display = windowManager.getDefaultDisplay();
@@ -1096,6 +1097,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             Bitmap decorBitmap = decorview.getDrawingCache();
             Bitmap bitmap = decorBitmap.createBitmap(decorBitmap);
             decorview.setDrawingCacheEnabled(false);
+//            Bitmap bitmap = loadBitmapFromView(decorview);
             return bitmap;
         }
     }
@@ -1113,17 +1115,37 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         // 把两部分拼起来，先把视频截图绘制到上下左右居中的位置，再把播放器的布局元素绘制上去。
         Canvas canvas = new Canvas(screenshot);
         canvas.drawBitmap(bottomBipmap, 0, 0, new Paint());
+        Bitmap bitmap = null;
         view.setDrawingCacheEnabled(true);
         Bitmap viewBitmap = view.getDrawingCache();
-        Bitmap bitmap = viewBitmap.createBitmap(viewBitmap);
+        bitmap = viewBitmap.createBitmap(viewBitmap);
         view.setDrawingCacheEnabled(false);
-        float top = view.getTop();
-        float left = view.getLeft();
+        if (bitmap == null) {
+            bitmap = loadBitmapFromView(view);
+            mTextTv.setText(mTextTv.getText());
+            mTextTv.requestFocus();
+        }
+        float top = mTextLl.getTop();
+        float left = mTextLl.getLeft();
         canvas.drawBitmap(bitmap, left, top, new Paint());
         canvas.save();
         canvas.restore();
         return screenshot;
     }
+
+
+    private Bitmap loadBitmapFromView(View view) {
+        if (view == null) {
+            return null;
+        }
+        Bitmap screenshot = null;
+        screenshot = Bitmap.createBitmap(view.getWidth(),
+                view.getHeight(), Bitmap.Config.ARGB_4444);
+        Canvas c = new Canvas(screenshot);
+        view.draw(c);
+        return screenshot;
+    }
+
 
     /**
      * 休眠
@@ -1541,10 +1563,20 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        Toast.makeText(mContext, "按下了" + keyCode, Toast.LENGTH_SHORT).show();
+//        Toast.makeText(mContext, "按下了" + keyCode, Toast.LENGTH_SHORT).show();
         if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_M) {
             goToAbout();
             return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP
+                || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+                || keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
+            mIdleFl.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    updateStatus();
+                }
+            }, 200);
         }
         return super.onKeyDown(keyCode, event);
     }
