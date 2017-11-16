@@ -165,12 +165,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         if (mDeviceId != 0) {
             int current = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
             int maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-            int targetVolume = 0;
-            if (maxVolume == 100) {
-                targetVolume = current;
-            } else {
-                targetVolume = (int) Math.ceil(current * 100D / maxVolume);
-            }
+            int targetVolume = (int) Math.ceil(current * 100D / maxVolume);
             Call<BaseResponse> updateCall = Api.getDefault(HostType.VOM_HOST).updateStatus(Api.getCacheControl(),
                     mDeviceId, AppConstant.STATUS_WAKE_UP, targetVolume);
             updateCall.enqueue(new Callback<BaseResponse>() {
@@ -308,7 +303,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         options.setInteger(AVOptions.KEY_MEDIACODEC, codec);
         mVideoView.setDisplayAspectRatio(PLVideoTextureView.ASPECT_RATIO_FIT_PARENT);
         mVideoView.setAVOptions(options);
-        mVideoView.setDebugLoggingEnabled(true);
+        mVideoView.setDebugLoggingEnabled(false);
+        mVideoView.setLooping(true);
         mVideoView.setOnInfoListener(mOnInfoListener);
         mVideoView.setOnVideoSizeChangedListener(mOnVideoSizeChangedListener);
         mVideoView.setOnBufferingUpdateListener(mOnBufferingUpdateListener);
@@ -353,7 +349,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initData() {
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
         mUuid = uuidFactory.getDeviceUuid().toString();
-//        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
+        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
@@ -854,12 +850,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void adjustVolume(Task task) {
         int volume = task.getVolume();
         int maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int targetVolume = 0;
-        if (maxVolume == 100) {
-            targetVolume = volume;
-        } else {
-            targetVolume = (int) Math.ceil(volume * 100D / maxVolume);
-        }
+        int targetVolume = (int) Math.ceil(volume * maxVolume / 100D);
         mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, 0);
         int current = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         Log.e("Volume", "Task:" + volume + "__Current:" + current + "__Target:" + targetVolume);
@@ -878,6 +869,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 Log.e("adjustVolume", t.getMessage() == null ? "调节音量失败" : t.getMessage());
             }
         });
+        mockText();
     }
 
     private void mockPicture() {
@@ -1236,9 +1228,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     private PLMediaPlayer.OnVideoSizeChangedListener mOnVideoSizeChangedListener = new PLMediaPlayer.OnVideoSizeChangedListener() {
         @Override
-        public void onVideoSizeChanged(PLMediaPlayer plMediaPlayer, int i, int i1, int i2, int i3) {
-            Log.i(TAG, "onVideoSizeChanged: width = " + i + ", height = " + i1 + "I2" + i2 + "I3" + i3);
+        public void onVideoSizeChanged(PLMediaPlayer plMediaPlayer, int i, int i1) {
         }
+
     };
 
 

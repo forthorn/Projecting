@@ -782,8 +782,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private PLMediaPlayer.OnVideoSizeChangedListener mOnVideoSizeChangedListener = new PLMediaPlayer.OnVideoSizeChangedListener() {
         @Override
-        public void onVideoSizeChanged(PLMediaPlayer plMediaPlayer, int i, int i1, int i2, int i3) {
-            Log.i(TAG, "onVideoSizeChanged: width = " + i + ", height = " + i1 + "I2" + i2 + "I3" + i3);
+        public void onVideoSizeChanged(PLMediaPlayer plMediaPlayer, int i, int i1) {
         }
 
     };
