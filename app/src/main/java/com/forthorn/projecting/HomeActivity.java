@@ -54,9 +54,8 @@ import com.forthorn.projecting.util.GsonUtils;
 import com.forthorn.projecting.util.SPUtils;
 import com.forthorn.projecting.util.ToastUtil;
 import com.forthorn.projecting.widget.NoticeDialog;
-import com.pili.pldroid.player.AVOptions;
+import com.forthorn.projecting.widget.TextureVideoPlayer;
 import com.pili.pldroid.player.PLMediaPlayer;
-import com.pili.pldroid.player.widget.PLVideoTextureView;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -90,10 +89,11 @@ import rx.functions.Action1;
 import static com.forthorn.projecting.app.Status.IDLE;
 
 
-public class HomeActivity extends Activity implements View.OnClickListener, AlarmReceiver.AlarmListener {
+public class HomeActivity extends Activity implements View.OnClickListener,
+        AlarmReceiver.AlarmListener, TextureVideoPlayer.OnVideoPlayingListener {
     //视频
     private FrameLayout mVideoFl;
-    private PLVideoTextureView mVideoView;
+    private TextureVideoPlayer mVideoView;
     //图片
     private FrameLayout mPictureFl;
     private AutoViewPager mPicturePager;
@@ -297,19 +297,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initPlayer() {
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        int codec = getIntent().getIntExtra("mediaCodec", AVOptions.MEDIA_CODEC_HW_DECODE);
-        AVOptions options = new AVOptions();
-        options.setInteger(AVOptions.KEY_PREPARE_TIMEOUT, 10 * 1000);
-        options.setInteger(AVOptions.KEY_MEDIACODEC, codec);
-        mVideoView.setDisplayAspectRatio(PLVideoTextureView.ASPECT_RATIO_FIT_PARENT);
-        mVideoView.setAVOptions(options);
-        mVideoView.setDebugLoggingEnabled(false);
-        mVideoView.setLooping(true);
-        mVideoView.setOnInfoListener(mOnInfoListener);
-        mVideoView.setOnVideoSizeChangedListener(mOnVideoSizeChangedListener);
-        mVideoView.setOnBufferingUpdateListener(mOnBufferingUpdateListener);
-        mVideoView.setOnCompletionListener(mOnCompletionListener);
-        mVideoView.setOnErrorListener(mOnErrorListener);
+        mVideoView.setOnVideoPlayingListener(this);
     }
 
     private void initIM() {
@@ -320,7 +308,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initView() {
         //视频
         mVideoFl = (FrameLayout) findViewById(R.id.video_fl);
-        mVideoView = (PLVideoTextureView) findViewById(R.id.video_view);
+        mVideoView = (TextureVideoPlayer) findViewById(R.id.video_view);
         //图片
         mPictureFl = (FrameLayout) findViewById(R.id.picture_fl);
         mPicturePager = (AutoViewPager) findViewById(R.id.picture_view_pager);
@@ -955,7 +943,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     }
 
     private void playVideo(Task task) {
-        mVideoView.pause();
+        mVideoView.stop();
         Download download = DBUtils.getInstance().findDownloadedDownload(task.getContent());
         String filePath = null;
         if (download != null) {
@@ -970,8 +958,17 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             filePath = task.getContent();
             Toast.makeText(mContext, "播放网络视频" + filePath, Toast.LENGTH_SHORT).show();
         }
-        mVideoView.setVideoPath(filePath);
-        mVideoView.start();
+        mVideoView.setUrl(filePath);
+        if (!mVideoView.surfaceAvailable()) {
+            mVideoView.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mVideoView.play();
+                }
+            }, 1500L);
+        } else {
+            mVideoView.play();
+        }
         mVideoView.setTag(task.getId());
     }
 
@@ -1074,9 +1071,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      */
     private Bitmap getScreenshot() {
         if (mStatus == Status.VIDEO) {
-            return mVideoView.getTextureView().getBitmap();
+            return mVideoView.getBitmap();
         } else if (mStatus == Status.VIDEO_TEXT) {
-            Bitmap videoBitmap = mVideoView.getTextureView().getBitmap();
+            Bitmap videoBitmap = mVideoView.getBitmap();
             return compositeBitmap(videoBitmap, mTextTv);
         } else {
             WindowManager windowManager = getWindowManager();
@@ -1108,17 +1105,50 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         Canvas canvas = new Canvas(screenshot);
         canvas.drawBitmap(bottomBipmap, 0, 0, new Paint());
         Bitmap bitmap = null;
-        view.setDrawingCacheEnabled(true);
-        Bitmap viewBitmap = view.getDrawingCache();
-        bitmap = viewBitmap.createBitmap(viewBitmap);
-        view.setDrawingCacheEnabled(false);
+        {
+            mTextTv.setDrawingCacheEnabled(true);
+            Bitmap viewBitmap = mTextTv.getDrawingCache();
+            bitmap = Bitmap.createBitmap(viewBitmap);
+            mTextTv.setDrawingCacheEnabled(false);
+            if (bitmap != null) {
+                Toast.makeText(mContext, "方案一成功", Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案一成功");
+            }
+        }
+//        if (bitmap == null) {
+//            bitmap = loadBitmapFromView(mTextTv);
+//            mTextTv.setText(mTextTv.getText());
+//            mTextTv.requestFocus();
+//            if (bitmap != null) {
+//                Toast.makeText(mContext, "方案二失败", Toast.LENGTH_SHORT).show();
+//                Log.e("Bitmap", "方案二失败");
+//            }
+//        }
         if (bitmap == null) {
-            bitmap = loadBitmapFromView(view);
+            mTextLl.setDrawingCacheEnabled(true);
+            Bitmap view2Bitmap = mTextLl.getDrawingCache();
+            bitmap = Bitmap.createBitmap(view2Bitmap);
+            mTextLl.setDrawingCacheEnabled(false);
+            if (bitmap != null) {
+                Toast.makeText(mContext, "方案三成功", Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案三成功");
+            }
+        }
+        if (bitmap == null) {
+            bitmap = loadBitmapFromView(mTextLl);
             mTextTv.setText(mTextTv.getText());
             mTextTv.requestFocus();
+            if (bitmap != null) {
+                Toast.makeText(mContext, "方案四成功", Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案四成功");
+            }
         }
-        float top = mTextLl.getTop();
-        float left = mTextLl.getLeft();
+//        float top = mTextLl.getTop();
+        int[] location = new int[2];
+        mTextTv.getLocationInWindow(location);
+        float top = location[1];
+//        float left = mTextLl.getLeft();
+        float left = location[0];
         canvas.drawBitmap(bitmap, left, top, new Paint());
         canvas.save();
         canvas.restore();
@@ -1131,8 +1161,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             return null;
         }
         Bitmap screenshot = null;
-        screenshot = Bitmap.createBitmap(view.getWidth(),
-                view.getHeight(), Bitmap.Config.ARGB_4444);
+        screenshot = Bitmap.createBitmap(view.getMeasuredWidth(),
+                view.getMeasuredWidth(), Bitmap.Config.ARGB_4444);
         Canvas c = new Canvas(screenshot);
         view.draw(c);
         return screenshot;
@@ -1236,7 +1266,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     @Override
     protected void onDestroy() {
-        mVideoView.stopPlayback();
+        mVideoView.stop();
         SQLiteStudioService.instance().stop();
         unregisterReceiver(mAlarmReceiver);
         JMessageClient.unRegisterEventReceiver(this);
@@ -1320,7 +1350,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 //                if (mPicturePager.getTag().equals(task.getId())) {
 //                    return;
 //                }
-                mVideoView.pause();
+                mVideoView.stop();
                 mPicturePager.stop();
                 playPicture(task);
                 break;
@@ -1330,9 +1360,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     mPicturePager.stop();
                 } else if (mStatus == Status.PICTURE) {
                     mStatus = Status.PICTURE_TEXT;
-                    mVideoView.pause();
+                    mVideoView.stop();
                 } else if (mStatus == Status.IDLE) {
-                    mVideoView.pause();
+                    mVideoView.stop();
                     mPicturePager.stop();
                     mStatus = Status.IDLE_TEXT;
                 }
@@ -1362,9 +1392,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     mPicturePager.stop();
                 } else if (mStatus == Status.PICTURE) {
                     mStatus = Status.PICTURE_TEXT;
-                    mVideoView.pause();
+                    mVideoView.stop();
                 } else if (mStatus == Status.IDLE) {
-                    mVideoView.pause();
+                    mVideoView.stop();
                     mPicturePager.stop();
                     mStatus = Status.IDLE_TEXT;
                 }
@@ -1419,14 +1449,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         switch (mStatus) {
             case VIDEO:
                 if (mVideoView.getTag().equals(task.getId())) {
-                    mVideoView.pause();
+                    mVideoView.stop();
                     mStatus = Status.IDLE;
                 }
                 break;
             case VIDEO_TEXT:
                 if (task.getType() == AppConstant.TASK_TYPE_VIDEO) {
                     if (mVideoView.getTag().equals(task.getId())) {
-                        mVideoView.pause();
+                        mVideoView.stop();
                         mStatus = Status.IDLE_TEXT;
                     }
                 } else if (task.getType() == AppConstant.TASK_TYPE_TEXT) {
@@ -1571,5 +1601,42 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             }, 200);
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+
+    @Override
+    public void onVideoSizeChanged(int vWidth, int vHeight) {
+
+    }
+
+    @Override
+    public void onPlayStart() {
+
+    }
+
+
+    @Override
+    public void onPlaying(int duration, int percent) {
+
+    }
+
+    @Override
+    public void onPlayPause() {
+
+    }
+
+    @Override
+    public void onPlayRestart() {
+
+    }
+
+    @Override
+    public void onPlayingFinish() {
+        mVideoView.play();
+    }
+
+    @Override
+    public void onTextureDestory() {
+
     }
 }

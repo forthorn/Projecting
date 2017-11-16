@@ -6,9 +6,14 @@
              android:background="@android:color/black"
              android:orientation="vertical">
 
-    <com.pili.pldroid.player.widget.PLVideoTextureView
+    <!--<com.pili.pldroid.player.widget.PLVideoTextureView-->
+    <!--android:id="@+id/video_view"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:layout_gravity="center"/>-->
+
+    <com.forthorn.projecting.widget.TextureVideoPlayer
         android:id="@+id/video_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"/>
+        android:layout_height="match_parent"/>
 </FrameLayout>
