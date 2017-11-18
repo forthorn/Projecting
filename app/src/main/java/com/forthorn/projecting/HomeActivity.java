@@ -163,14 +163,22 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     private void updateStatus() {
         if (mDeviceId != 0) {
-            int current = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-            int maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-            int targetVolume = 0;
-            if (maxVolume == 100) {
-                targetVolume = current;
-            } else {
-                targetVolume = (int) Math.ceil(current * 100D / maxVolume);
-            }
+            AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            audioManager.requestAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
+                @Override
+                public void onAudioFocusChange(int i) {
+
+                }
+            }, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+            int current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+            int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+            audioManager.abandonAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
+                @Override
+                public void onAudioFocusChange(int i) {
+
+                }
+            });
+            int targetVolume = (int) Math.ceil(current * 100D / maxVolume);
             Call<BaseResponse> updateCall = Api.getDefault(HostType.VOM_HOST).updateStatus(Api.getCacheControl(),
                     mDeviceId, AppConstant.STATUS_WAKE_UP, targetVolume);
             updateCall.enqueue(new Callback<BaseResponse>() {
@@ -308,7 +316,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         options.setInteger(AVOptions.KEY_MEDIACODEC, codec);
         mVideoView.setDisplayAspectRatio(PLVideoTextureView.ASPECT_RATIO_FIT_PARENT);
         mVideoView.setAVOptions(options);
-        mVideoView.setDebugLoggingEnabled(true);
+        mVideoView.setDebugLoggingEnabled(false);
         mVideoView.setOnInfoListener(mOnInfoListener);
         mVideoView.setOnVideoSizeChangedListener(mOnVideoSizeChangedListener);
         mVideoView.setOnBufferingUpdateListener(mOnBufferingUpdateListener);
@@ -353,7 +361,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initData() {
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
         mUuid = uuidFactory.getDeviceUuid().toString();
-//        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
+        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
@@ -852,16 +860,23 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * 调节音量
      */
     private void adjustVolume(Task task) {
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        audioManager.requestAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int i) {
+
+            }
+        }, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
         int volume = task.getVolume();
-        int maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int targetVolume = 0;
-        if (maxVolume == 100) {
-            targetVolume = volume;
-        } else {
-            targetVolume = (int) Math.ceil(volume * 100D / maxVolume);
-        }
-        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, 0);
-        int current = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        int targetVolume = (int) Math.ceil(volume * maxVolume / 100D);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, 0);
+        int current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        audioManager.abandonAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int i) {
+            }
+        });
         Log.e("Volume", "Task:" + volume + "__Current:" + current + "__Target:" + targetVolume);
         updateStatus();
         Call<BaseResponse> volumeCall = Api.getDefault(HostType.VOM_HOST).setVolume(Api.getCacheControl(),
@@ -964,6 +979,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     private void playVideo(Task task) {
         mVideoView.pause();
+        mVideoView.stopPlayback();
         Download download = DBUtils.getInstance().findDownloadedDownload(task.getContent());
         String filePath = null;
         if (download != null) {
@@ -1095,7 +1111,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             decorview.setDrawingCacheEnabled(true);
             decorview.buildDrawingCache();
             Bitmap decorBitmap = decorview.getDrawingCache();
-            Bitmap bitmap = decorBitmap.createBitmap(decorBitmap);
+            Bitmap bitmap = Bitmap.createBitmap(decorBitmap);
             decorview.setDrawingCacheEnabled(false);
 //            Bitmap bitmap = loadBitmapFromView(decorview);
             return bitmap;
@@ -1116,17 +1132,50 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         Canvas canvas = new Canvas(screenshot);
         canvas.drawBitmap(bottomBipmap, 0, 0, new Paint());
         Bitmap bitmap = null;
-        view.setDrawingCacheEnabled(true);
-        Bitmap viewBitmap = view.getDrawingCache();
-        bitmap = viewBitmap.createBitmap(viewBitmap);
-        view.setDrawingCacheEnabled(false);
+        {
+            mTextTv.setDrawingCacheEnabled(true);
+            Bitmap viewBitmap = mTextTv.getDrawingCache();
+            bitmap = Bitmap.createBitmap(viewBitmap);
+            mTextTv.setDrawingCacheEnabled(false);
+            if (bitmap != null) {
+                Toast.makeText(mContext, "方案一成功", Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案一成功");
+            }
+        }
+//        if (bitmap == null) {
+//            bitmap = loadBitmapFromView(mTextTv);
+//            mTextTv.setText(mTextTv.getText());
+//            mTextTv.requestFocus();
+//            if (bitmap != null) {
+//                Toast.makeText(mContext, "方案二失败", Toast.LENGTH_SHORT).show();
+//                Log.e("Bitmap", "方案二失败");
+//            }
+//        }
         if (bitmap == null) {
-            bitmap = loadBitmapFromView(view);
+            mTextLl.setDrawingCacheEnabled(true);
+            Bitmap view2Bitmap = mTextLl.getDrawingCache();
+            bitmap = Bitmap.createBitmap(view2Bitmap);
+            mTextLl.setDrawingCacheEnabled(false);
+            if (bitmap != null) {
+                Toast.makeText(mContext, "方案三成功", Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案三成功");
+            }
+        }
+        if (bitmap == null) {
+            bitmap = loadBitmapFromView(mTextLl);
             mTextTv.setText(mTextTv.getText());
             mTextTv.requestFocus();
+            if (bitmap != null) {
+                Toast.makeText(mContext, "方案四成功", Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案四成功");
+            }
         }
-        float top = mTextLl.getTop();
-        float left = mTextLl.getLeft();
+//        float top = mTextLl.getTop();
+//        float left = mTextLl.getLeft();
+        int[] location = new int[2];
+        mTextTv.getLocationInWindow(location);
+        float top = location[1];
+        float left = location[0];
         canvas.drawBitmap(bitmap, left, top, new Paint());
         canvas.save();
         canvas.restore();
@@ -1139,8 +1188,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             return null;
         }
         Bitmap screenshot = null;
-        screenshot = Bitmap.createBitmap(view.getWidth(),
-                view.getHeight(), Bitmap.Config.ARGB_4444);
+        screenshot = Bitmap.createBitmap(view.getMeasuredWidth(),
+                view.getMeasuredWidth(), Bitmap.Config.ARGB_4444);
         Canvas c = new Canvas(screenshot);
         view.draw(c);
         return screenshot;
