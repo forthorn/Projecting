@@ -533,7 +533,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //减少音量
         mAudioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
-                AudioManager.ADJUST_LOWER, AudioManager.FX_FOCUS_NAVIGATION_UP);
+                AudioManager.ADJUST_LOWER, 0);
         ToastUtil.shortToast(MainActivity.this, "减少后音量：" + mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC));
     }
 

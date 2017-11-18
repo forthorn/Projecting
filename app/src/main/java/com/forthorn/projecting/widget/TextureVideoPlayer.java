@@ -11,6 +11,10 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
 
+import com.forthorn.projecting.app.AppApplication;
+import com.forthorn.projecting.app.BundleKey;
+import com.forthorn.projecting.util.SPUtils;
+
 import java.io.IOException;
 
 /**
@@ -130,6 +134,14 @@ public class TextureVideoPlayer extends TextureView implements TextureView.Surfa
         }
     }
 
+    public void setVolume() {
+        if (mMediaPlayer != null) {
+            int mediaVolum = SPUtils.getSharedIntData(AppApplication.getContext(), BundleKey.VOLUME, 50);
+            float v = mediaVolum * 1F / 100F;
+            mMediaPlayer.setVolume(v, v);
+        }
+    }
+
     //播放进度获取
     private void getPlayingProgress() {
         mProgressHandler.sendEmptyMessage(0);
@@ -169,6 +181,7 @@ public class TextureVideoPlayer extends TextureView implements TextureView.Surfa
             mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
                 public void onPrepared(MediaPlayer mp) {
+                    setVolume();
                     mMediaPlayer.start();
                 }
             });

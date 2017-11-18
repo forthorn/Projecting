@@ -141,6 +141,7 @@ public class HomeActivity extends Activity implements View.OnClickListener,
     private List<Integer> mTaskIdList = new ArrayList<>();
 
     private Map<Integer, Integer> mTaskIds = new HashMap<>();
+    private int volumeStep = 5;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,9 +164,10 @@ public class HomeActivity extends Activity implements View.OnClickListener,
 
     private void updateStatus() {
         if (mDeviceId != 0) {
-            int current = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-            int maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-            int targetVolume = (int) Math.ceil(current * 100D / maxVolume);
+//            int current = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+//            int maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+//            int targetVolume = (int) Math.ceil(current * 100D / maxVolume);
+            int targetVolume = SPUtils.getSharedIntData(mContext, BundleKey.VOLUME, 50);
             Call<BaseResponse> updateCall = Api.getDefault(HostType.VOM_HOST).updateStatus(Api.getCacheControl(),
                     mDeviceId, AppConstant.STATUS_WAKE_UP, targetVolume);
             updateCall.enqueue(new Callback<BaseResponse>() {
@@ -298,6 +300,18 @@ public class HomeActivity extends Activity implements View.OnClickListener,
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         mVideoView.setOnVideoPlayingListener(this);
+        int current = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        int maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        int targetVolume = (int) Math.ceil(current * 100D / maxVolume);
+        SPUtils.setSharedIntData(mContext, BundleKey.GLOBAL_VOLUME, targetVolume);
+        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, 0);
+        mAudioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                AudioManager.ADJUST_LOWER, 0);
+        int current2 = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, 0);
+        int step = maxVolume - current2;
+        volumeStep = (int) Math.ceil(step * 100 / maxVolume);
+        SPUtils.setSharedIntData(mContext, BundleKey.VOLUME_STEP, volumeStep);
     }
 
     private void initIM() {
@@ -839,7 +853,11 @@ public class HomeActivity extends Activity implements View.OnClickListener,
         int volume = task.getVolume();
         int maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         int targetVolume = (int) Math.ceil(volume * maxVolume / 100D);
-        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, 0);
+        SPUtils.setSharedIntData(mContext, BundleKey.VOLUME, targetVolume);
+        if (mStatus == Status.VIDEO || mStatus == Status.VIDEO_TEXT) {
+            mVideoView.setVolume();
+        }
+//        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, 0);
         int current = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         Log.e("Volume", "Task:" + volume + "__Current:" + current + "__Target:" + targetVolume);
         updateStatus();
@@ -1590,15 +1608,49 @@ public class HomeActivity extends Activity implements View.OnClickListener,
             goToAbout();
             return true;
         }
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP
-                || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
-                || keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+            int volume = SPUtils.getSharedIntData(mContext, BundleKey.VOLUME);
+            volume = volume + volumeStep;
+            if (volume >= 100) {
+                volume = 100;
+            }
+            SPUtils.setSharedIntData(mContext, BundleKey.VOLUME, volume);
+            mVideoView.setVolume();
             mIdleFl.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     updateStatus();
                 }
             }, 200);
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
+            int volume = 0;
+            SPUtils.setSharedIntData(mContext, BundleKey.VOLUME, volume);
+            mVideoView.setVolume();
+            mIdleFl.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    updateStatus();
+                }
+            }, 200);
+            return true;
+        }
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            int volume = SPUtils.getSharedIntData(mContext, BundleKey.VOLUME);
+            volume = volume - volumeStep;
+            if (volume < 0) {
+                volume = 0;
+            }
+            SPUtils.setSharedIntData(mContext, BundleKey.VOLUME, volume);
+            mVideoView.setVolume();
+            mIdleFl.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    updateStatus();
+                }
+            }, 200);
+            return true;
         }
         return super.onKeyDown(keyCode, event);
     }

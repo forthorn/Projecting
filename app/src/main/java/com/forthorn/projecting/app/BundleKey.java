@@ -18,6 +18,10 @@ public interface BundleKey {
     public static final String IM_ACCOUNT = "IM_ACCOUNT";
     public static final String IM_PASSWORD = "IM_PASSWORD";
 
+    public static final String VOLUME = "VOLUME";
+    public static final String GLOBAL_VOLUME = "GLOBAL_VOLUME";
+    public static final String VOLUME_STEP = "VOLUME_STEP";
+
     public static final String KEY_VIDEO = "KEY_VIDEO";
 
 
