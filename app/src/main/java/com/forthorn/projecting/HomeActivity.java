@@ -1215,25 +1215,25 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 //                Log.e("Bitmap", "方案一成功");
 //            }
 //        }
-        if (bitmap == null) {
-            mTextLl.setDrawingCacheEnabled(true);
-            Bitmap view2Bitmap = mTextLl.getDrawingCache();
-            bitmap = Bitmap.createBitmap(view2Bitmap);
-            mTextLl.setDrawingCacheEnabled(false);
-            if (bitmap != null) {
-                //Toast.makeText(mContext, "方案三成功", //Toast.LENGTH_SHORT).show();
-                Log.e("Bitmap", "方案三成功");
-            }
-        }
 //        if (bitmap == null) {
-//            bitmap = loadBitmapFromView(mTextLl);
-//            mTextTv.setText(mTextTv.getText());
-//            mTextTv.requestFocus();
+//            mTextLl.setDrawingCacheEnabled(true);
+//            Bitmap view2Bitmap = mTextLl.getDrawingCache();
+//            bitmap = Bitmap.createBitmap(view2Bitmap);
+//            mTextLl.setDrawingCacheEnabled(false);
 //            if (bitmap != null) {
-//                //Toast.makeText(mContext, "方案四成功", //Toast.LENGTH_SHORT).show();
-//                Log.e("Bitmap", "方案四成功");
+//                //Toast.makeText(mContext, "方案三成功", //Toast.LENGTH_SHORT).show();
+//                Log.e("Bitmap", "方案三成功");
 //            }
 //        }
+        if (bitmap == null) {
+            bitmap = loadBitmapFromView(mTextLl);
+            mTextTv.setText(mTextTv.getText());
+            mTextTv.requestFocus();
+            if (bitmap != null) {
+                //Toast.makeText(mContext, "方案四成功", //Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案四成功");
+            }
+        }
 //        float top = mTextLl.getTop();
 //        float left = mTextLl.getLeft();
         int[] location = new int[2];
