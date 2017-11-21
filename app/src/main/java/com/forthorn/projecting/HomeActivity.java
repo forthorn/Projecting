@@ -211,11 +211,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void setRequestAlarm() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
         Log.e("Alarm", "现在是：" + sdf.format(new Date()));
-        Toast.makeText(mContext, "现在是：" + sdf.format(new Date()), Toast.LENGTH_SHORT).show();
+        //Toast.makeText(mContext, "现在是：" + sdf.format(new Date()), //Toast.LENGTH_SHORT).show();
         nextHourTimeStamp = getNextHourStamp();
-        Toast.makeText(mContext, "下一个整点是：" + sdf.format(new Date(nextHourTimeStamp * 1000L)), Toast.LENGTH_SHORT).show();
+        //Toast.makeText(mContext, "下一个整点是：" + sdf.format(new Date(nextHourTimeStamp * 1000L)), //Toast.LENGTH_SHORT).show();
         Log.e("Alarm", "下一个整点是：" + sdf.format(new Date(nextHourTimeStamp * 1000L)));
-        Toast.makeText(mContext, "下一个请求将在：" + sdf.format(new Date(nextHourTimeStamp * 1000L - 300000L)), Toast.LENGTH_SHORT).show();
+        //Toast.makeText(mContext, "下一个请求将在：" + sdf.format(new Date(nextHourTimeStamp * 1000L - 300000L)), //Toast.LENGTH_SHORT).show();
         Log.e("Alarm", "下一个请求将在：" + sdf.format(new Date(nextHourTimeStamp * 1000L - 300000L)));
         Log.e("Alarm", (nextHourTimeStamp * 1000L - 300000L - System.currentTimeMillis()) / 1000 + "秒后请求");
         mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE, nextHourTimeStamp * 1000L - 300000L - System.currentTimeMillis());
@@ -228,7 +228,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             super.handleMessage(msg);
             switch (msg.what) {
                 case HANDLER_MESSAGE_TIMING_LOGIN:
-                    Toast.makeText(mContext, "每十分钟登录一次", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(mContext, "每十分钟登录一次", //Toast.LENGTH_SHORT).show();
                     requestIMAccount();
                     mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000L);
                     break;
@@ -236,7 +236,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     requestIMAccount();
                     break;
                 case HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE:
-                    Toast.makeText(mContext, "提前请求下一个时间段任务", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(mContext, "提前请求下一个时间段任务", //Toast.LENGTH_SHORT).show();
                     nextHourTimeStamp = getNextHourStamp();
                     requestTasks(nextHourTimeStamp);
                     mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE, 3600000L);
@@ -253,7 +253,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             return;
         }
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm");
-        Toast.makeText(mContext, "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(mContext, "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务", //Toast.LENGTH_SHORT).show();
         Call<TaskRes> taskResCall = Api.getDefault(HostType.VOM_HOST).getTaskList(Api.getCacheControl(),
                 String.valueOf(mDeviceId), String.valueOf(timeStamp));
         taskResCall.enqueue(new Callback<TaskRes>() {
@@ -262,15 +262,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 Log.e("查询任务", "结果：" + response.toString());
                 TaskRes taskRes = response.body();
                 if (taskRes == null) {
-                    Toast.makeText(mContext, "查询失败：空", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(mContext, "查询失败：空", //Toast.LENGTH_SHORT).show();
                     return;
                 }
                 Log.e("查询任务", "结果：" + taskRes.toString());
                 if (taskRes.getData() == null || taskRes.getData().isEmpty()) {
-                    Toast.makeText(mContext, "查询：当前任务数为：0", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(mContext, "查询：当前任务数为：0", //Toast.LENGTH_SHORT).show();
                     return;
                 }
-                Toast.makeText(mContext, "查询：当前任务数为：" + taskRes.getData().size(), Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "查询：当前任务数为：" + taskRes.getData().size(), //Toast.LENGTH_SHORT).show();
                 for (Task task : taskRes.getData()) {
                     handleTask(task);
                 }
@@ -361,7 +361,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initData() {
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
         mUuid = uuidFactory.getDeviceUuid().toString();
-        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
+//        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
@@ -426,7 +426,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
             @Override
             public void onFailure(Call<IMAccount> call, Throwable t) {
-                Toast.makeText(mContext, t.getMessage(), Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, t.getMessage(), //Toast.LENGTH_SHORT).show();
                 login();
             }
         });
@@ -448,11 +448,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                         public void gotResult(int i, String s, Integer integer) {
                         }
                     });
-                    ToastUtil.shortToast(mContext, "登陆成功" + myInfo.getUserName());
+                    //ToastUtil.short//Toast(mContext, "登陆成功" + myInfo.getUserName());
                     mIdleServerStatusTv.setText("在线");
                     mIdleServerStatusTv.setEnabled(true);
                 } else {
-                    ToastUtil.shortToast(mContext, "Code:" + i + "   Reason:" + s);
+                    //ToastUtil.short//Toast(mContext, "Code:" + i + "   Reason:" + s);
                     mIdleServerStatusTv.setText("离线");
                     mIdleServerStatusTv.setEnabled(false);
                 }
@@ -601,7 +601,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 Task task = GsonUtils.convertObj(customContent.toJson(), Task.class);
                 Log.e("CustomContent", customContent.toJson());
                 if (task == null) {
-                    Toast.makeText(mContext, "消息格式错误", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(mContext, "消息格式错误", //Toast.LENGTH_SHORT).show();
                     return;
                 }
                 Log.e("taskMessage", task.toString());
@@ -658,7 +658,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void handleTask(Task task) {
         Log.e("handleTask", "开始处理任务");
         if (task.getFinish_time() < System.currentTimeMillis() / 1000L) {
-            Toast.makeText(mContext, "查询到任务id为" + task.getId() + "的任务已过期，自动跳过", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(mContext, "查询到任务id为" + task.getId() + "的任务已过期，自动跳过", //Toast.LENGTH_SHORT).show();
             return;
         }
         int status = task.getStatus();
@@ -724,7 +724,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mAlarmManager.set(AlarmManager.RTC_WAKEUP, task.getFinish_time() * 1000L - 200L, pendingIntent);
         Log.e("addFinishAlarmTask", "Task时间：" + task.getFinish_time() * 1000L);
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
-        Toast.makeText(mContext, "设定：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)) + "结束当前任务", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(mContext, "设定：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)) + "结束当前任务", //Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -911,7 +911,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 //        task.setContent("http://p1.wmpic.me/article/2015/04/10/1428655515_xYwBQLzs.jpg");
         task.setContent("http://p2.wmpic.me/article/2015/04/10/1428655516_cTGyxgAF.jpg");
         Log.e("mockPicture", task.toString());
-        Toast.makeText(mContext, "模拟图片任务：" + task.toString(), Toast.LENGTH_SHORT).show();
+        //Toast.makeText(mContext, "模拟图片任务：" + task.toString(), //Toast.LENGTH_SHORT).show();
         handleTask(task);
     }
 
@@ -932,7 +932,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 //        task.setContent("http://p2.wmpic.me/article/2015/04/10/1428655516_cTGyxgAF.jpg");
 //        task.setContent("http://p1.wmpic.me/article/2015/04/10/1428655515_DCkMDAGY.jpg");
         Log.e("mockText", task.toString());
-        Toast.makeText(mContext, "模拟文字任务：" + task.toString(), Toast.LENGTH_SHORT).show();
+        //Toast.makeText(mContext, "模拟文字任务：" + task.toString(), //Toast.LENGTH_SHORT).show();
         handleTask(task);
     }
 
@@ -951,7 +951,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         task.setDuration(180);
         task.setContent("http://vf2.mtime.cn/Video/2017/03/31/mp4/170331093811717750.mp4");
         Log.e("mockVideo", task.toString());
-        Toast.makeText(mContext, "模拟视频任务：" + task.toString(), Toast.LENGTH_SHORT).show();
+        //Toast.makeText(mContext, "模拟视频任务：" + task.toString(), //Toast.LENGTH_SHORT).show();
         Downloader.getInstance().download(task);
         handleTask(task);
     }
@@ -973,7 +973,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         } else if (text.startsWith("http")) {
 //            playVideo(text);
         } else {
-            ToastUtil.shortToast(mContext, "无法识别的指令");
+            //ToastUtil.short//Toast(mContext, "无法识别的指令");
         }
     }
 
@@ -987,12 +987,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             if (!new File(filePath).exists()) {
                 DBUtils.getInstance().deleteDownload(download);
                 filePath = task.getContent();
-                Toast.makeText(mContext, "播放网络视频" + filePath, Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "播放网络视频" + filePath, //Toast.LENGTH_SHORT).show();
             }
-            Toast.makeText(mContext, "播放缓存视频" + filePath, Toast.LENGTH_SHORT).show();
+            //Toast.makeText(mContext, "播放缓存视频" + filePath, //Toast.LENGTH_SHORT).show();
         } else {
             filePath = task.getContent();
-            Toast.makeText(mContext, "播放网络视频" + filePath, Toast.LENGTH_SHORT).show();
+            //Toast.makeText(mContext, "播放网络视频" + filePath, //Toast.LENGTH_SHORT).show();
         }
         mVideoView.setVideoPath(filePath);
         mVideoView.start();
@@ -1010,7 +1010,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      */
     private void snapshot(Task task) {
         // TODO: 11/4/2017   需要验证视频
-        Toast.makeText(mContext, "当前状态：" + mStatus, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(mContext, "当前状态：" + mStatus, //Toast.LENGTH_SHORT).show();
         String filePath = saveCurrentImage();
         String time = task.getCreate_time() + "";
         RequestBody timeRB = RequestBody.create(MediaType.parse("text/plain"), time);
@@ -1064,7 +1064,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 Bmp.compress(Bitmap.CompressFormat.JPEG, 80, fos);
                 fos.flush();
                 fos.close();
-                Toast.makeText(mContext, "截屏文件已保存", Toast.LENGTH_LONG).show();
+                //Toast.makeText(mContext, "截屏文件已保存", //Toast.LENGTH_LONG).show();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -1132,22 +1132,76 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         Canvas canvas = new Canvas(screenshot);
         canvas.drawBitmap(bottomBipmap, 0, 0, new Paint());
         Bitmap bitmap = null;
-        {
-            mTextTv.setDrawingCacheEnabled(true);
-            Bitmap viewBitmap = mTextTv.getDrawingCache();
-            bitmap = Bitmap.createBitmap(viewBitmap);
-            mTextTv.setDrawingCacheEnabled(false);
-            if (bitmap != null) {
-                Toast.makeText(mContext, "方案一成功", Toast.LENGTH_SHORT).show();
-                Log.e("Bitmap", "方案一成功");
-            }
-        }
 //        if (bitmap == null) {
 //            bitmap = loadBitmapFromView(mTextTv);
 //            mTextTv.setText(mTextTv.getText());
 //            mTextTv.requestFocus();
 //            if (bitmap != null) {
-//                Toast.makeText(mContext, "方案二失败", Toast.LENGTH_SHORT).show();
+//                //Toast.makeText(mContext, "方案二失败", //Toast.LENGTH_SHORT).show();
+//                Log.e("Bitmap", "方案二失败");
+//            }
+//        }
+        //方案 一 一
+//        if (bitmap == null) {
+//            mTextTv.setDrawingCacheEnabled(true);
+//            Bitmap viewBitmap = mTextTv.getDrawingCache();
+//            bitmap = Bitmap.createBitmap(viewBitmap);
+//            mTextTv.setDrawingCacheEnabled(false);
+//            if (bitmap != null) {
+//                //Toast.makeText(mContext, "方案一成功", //Toast.LENGTH_SHORT).show();
+//                Log.e("Bitmap", "方案一成功");
+//            }
+//        }
+        if (bitmap == null) {
+            mTextLl.setDrawingCacheEnabled(true);
+            Bitmap view2Bitmap = mTextLl.getDrawingCache();
+            bitmap = Bitmap.createBitmap(view2Bitmap);
+            mTextLl.setDrawingCacheEnabled(false);
+            if (bitmap != null) {
+                //Toast.makeText(mContext, "方案三成功", //Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案三成功");
+            }
+        }
+//        if (bitmap == null) {
+//            bitmap = loadBitmapFromView(mTextLl);
+//            mTextTv.setText(mTextTv.getText());
+//            mTextTv.requestFocus();
+//            if (bitmap != null) {
+//                //Toast.makeText(mContext, "方案四成功", //Toast.LENGTH_SHORT).show();
+//                Log.e("Bitmap", "方案四成功");
+//            }
+//        }
+//        float top = mTextLl.getTop();
+//        float left = mTextLl.getLeft();
+        int[] location = new int[2];
+        mTextTv.getLocationInWindow(location);
+        float top = location[1];
+        float left = location[0];
+        canvas.drawBitmap(bitmap, left, top, new Paint());
+        canvas.save();
+        canvas.restore();
+        return screenshot;
+    }
+
+
+    private Bitmap compositeBitmap2(Bitmap bottomBipmap, View view) {
+        WindowManager windowManager = getWindowManager();
+        Display display = windowManager.getDefaultDisplay();
+        int w = display.getWidth();
+        int h = display.getHeight();
+        Bitmap screenshot = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_4444);
+        Canvas canvas = new Canvas(screenshot);
+        int bitW = bottomBipmap.getWidth();
+        int bitH = bottomBipmap.getHeight();
+        canvas.drawBitmap(bottomBipmap, (w - bitW) / 2, (h - bitH) / 2, new Paint());
+        canvas.drawBitmap(bottomBipmap, 0, 0, new Paint());
+        Bitmap bitmap = null;
+//        if (bitmap == null) {
+//            bitmap = loadBitmapFromView(mTextTv);
+//            mTextTv.setText(mTextTv.getText());
+//            mTextTv.requestFocus();
+//            if (bitmap != null) {
+//                //Toast.makeText(mContext, "方案二失败", //Toast.LENGTH_SHORT).show();
 //                Log.e("Bitmap", "方案二失败");
 //            }
 //        }
@@ -1157,8 +1211,18 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             bitmap = Bitmap.createBitmap(view2Bitmap);
             mTextLl.setDrawingCacheEnabled(false);
             if (bitmap != null) {
-                Toast.makeText(mContext, "方案三成功", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "方案三成功", //Toast.LENGTH_SHORT).show();
                 Log.e("Bitmap", "方案三成功");
+            }
+        }
+        if (bitmap == null) {
+            mTextTv.setDrawingCacheEnabled(true);
+            Bitmap viewBitmap = mTextTv.getDrawingCache();
+            bitmap = Bitmap.createBitmap(viewBitmap);
+            mTextTv.setDrawingCacheEnabled(false);
+            if (bitmap != null) {
+                //Toast.makeText(mContext, "方案一成功", //Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案一成功");
             }
         }
         if (bitmap == null) {
@@ -1166,7 +1230,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             mTextTv.setText(mTextTv.getText());
             mTextTv.requestFocus();
             if (bitmap != null) {
-                Toast.makeText(mContext, "方案四成功", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "方案四成功", //Toast.LENGTH_SHORT).show();
                 Log.e("Bitmap", "方案四成功");
             }
         }
@@ -1181,7 +1245,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         canvas.restore();
         return screenshot;
     }
-
 
     private Bitmap loadBitmapFromView(View view) {
         if (view == null) {
@@ -1254,7 +1317,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             Log.e(TAG, "Error happened, errorCode = " + errorCode);
             switch (errorCode) {
                 case PLMediaPlayer.ERROR_CODE_IO_ERROR:
-                    Toast.makeText(mContext, "IO Error !", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(mContext, "IO Error !", //Toast.LENGTH_SHORT).show();
                     return false;
                 default:
                     break;
@@ -1268,7 +1331,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         @Override
         public void onCompletion(PLMediaPlayer plMediaPlayer) {
             Log.i(TAG, "Play Completed !");
-            Toast.makeText(mContext, "本次视频播放完成!", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(mContext, "本次视频播放完成!", //Toast.LENGTH_SHORT).show();
             int taskId = mTaskIds.get(AppConstant.TASK_TYPE_VIDEO);
             Task task = DBUtils.getInstance().findTask(taskId);
             playVideo(task);
@@ -1363,7 +1426,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
         Log.e("executeTask", task.toString());
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
-        Toast.makeText(mContext, "执行：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), Toast.LENGTH_SHORT).show();
+        //Toast.makeText(mContext, "执行：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), //Toast.LENGTH_SHORT).show();
         switch (task.getType()) {
             case AppConstant.TASK_TYPE_PICTURE:
                 if (mStatus == Status.VIDEO_TEXT
@@ -1468,7 +1531,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         } catch (Exception e) {
         }
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
-        Toast.makeText(mContext, "结束：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), Toast.LENGTH_SHORT).show();
+        //Toast.makeText(mContext, "结束：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), //Toast.LENGTH_SHORT).show();
         task.setRunningStatus(AppConstant.TASK_RUNNING_STATUS_FINISH);
         DBUtils.getInstance().updateTask(task);
         deleteAlarmTask(task);
@@ -1560,21 +1623,21 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mPictureFl.setVisibility(View.INVISIBLE);
                 mVideoFl.setVisibility(View.VISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
-                Toast.makeText(mContext, "当前状态：视频+文字广告", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "当前状态：视频+文字广告", //Toast.LENGTH_SHORT).show();
                 break;
             case VIDEO:
                 mTextFl.setVisibility(View.INVISIBLE);
                 mPictureFl.setVisibility(View.INVISIBLE);
                 mVideoFl.setVisibility(View.VISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
-                Toast.makeText(mContext, "当前状态：视频广告", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "当前状态：视频广告", //Toast.LENGTH_SHORT).show();
                 break;
             case PICTURE:
                 mTextFl.setVisibility(View.INVISIBLE);
                 mPictureFl.setVisibility(View.VISIBLE);
                 mVideoFl.setVisibility(View.INVISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
-                Toast.makeText(mContext, "当前状态：图片广告", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "当前状态：图片广告", //Toast.LENGTH_SHORT).show();
                 break;
             case TEXT:
                 mTextFl.setVisibility(View.VISIBLE);
@@ -1582,7 +1645,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mPictureFl.setVisibility(View.INVISIBLE);
                 mVideoFl.setVisibility(View.INVISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
-                Toast.makeText(mContext, "当前状态：文字广告", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "当前状态：文字广告", //Toast.LENGTH_SHORT).show();
                 break;
             case PICTURE_TEXT:
                 mTextFl.setVisibility(View.VISIBLE);
@@ -1590,14 +1653,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mPictureFl.setVisibility(View.VISIBLE);
                 mVideoFl.setVisibility(View.INVISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
-                Toast.makeText(mContext, "当前状态：图片+文字广告", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "当前状态：图片+文字广告", //Toast.LENGTH_SHORT).show();
                 break;
             case IDLE:
                 mTextFl.setVisibility(View.INVISIBLE);
                 mPictureFl.setVisibility(View.INVISIBLE);
                 mVideoFl.setVisibility(View.INVISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
-                Toast.makeText(mContext, "当前状态：空闲状态", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "当前状态：空闲状态", //Toast.LENGTH_SHORT).show();
                 break;
             case IDLE_TEXT:
                 mTextFl.setVisibility(View.VISIBLE);
@@ -1605,14 +1668,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mPictureFl.setVisibility(View.INVISIBLE);
                 mVideoFl.setVisibility(View.INVISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
-                Toast.makeText(mContext, "当前状态：文字", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "当前状态：文字", //Toast.LENGTH_SHORT).show();
                 break;
         }
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-//        Toast.makeText(mContext, "按下了" + keyCode, Toast.LENGTH_SHORT).show();
+//        //Toast.makeText(mContext, "按下了" + keyCode, //Toast.LENGTH_SHORT).show();
         if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_M) {
             goToAbout();
             return true;
