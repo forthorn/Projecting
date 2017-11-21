@@ -1101,7 +1101,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             return mVideoView.getTextureView().getBitmap();
         } else if (mStatus == Status.VIDEO_TEXT) {
             Bitmap videoBitmap = mVideoView.getTextureView().getBitmap();
-            return compositeBitmap(videoBitmap, mTextTv);
+            return compositeBitmap2(videoBitmap, mTextTv);
         } else {
             WindowManager windowManager = getWindowManager();
             Display display = windowManager.getDefaultDisplay();
@@ -1205,6 +1205,16 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 //                Log.e("Bitmap", "方案二失败");
 //            }
 //        }
+//        if (bitmap == null) {
+//            mTextTv.setDrawingCacheEnabled(true);
+//            Bitmap viewBitmap = mTextTv.getDrawingCache();
+//            bitmap = Bitmap.createBitmap(viewBitmap);
+//            mTextTv.setDrawingCacheEnabled(false);
+//            if (bitmap != null) {
+//                //Toast.makeText(mContext, "方案一成功", //Toast.LENGTH_SHORT).show();
+//                Log.e("Bitmap", "方案一成功");
+//            }
+//        }
         if (bitmap == null) {
             mTextLl.setDrawingCacheEnabled(true);
             Bitmap view2Bitmap = mTextLl.getDrawingCache();
@@ -1215,25 +1225,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 Log.e("Bitmap", "方案三成功");
             }
         }
-        if (bitmap == null) {
-            mTextTv.setDrawingCacheEnabled(true);
-            Bitmap viewBitmap = mTextTv.getDrawingCache();
-            bitmap = Bitmap.createBitmap(viewBitmap);
-            mTextTv.setDrawingCacheEnabled(false);
-            if (bitmap != null) {
-                //Toast.makeText(mContext, "方案一成功", //Toast.LENGTH_SHORT).show();
-                Log.e("Bitmap", "方案一成功");
-            }
-        }
-        if (bitmap == null) {
-            bitmap = loadBitmapFromView(mTextLl);
-            mTextTv.setText(mTextTv.getText());
-            mTextTv.requestFocus();
-            if (bitmap != null) {
-                //Toast.makeText(mContext, "方案四成功", //Toast.LENGTH_SHORT).show();
-                Log.e("Bitmap", "方案四成功");
-            }
-        }
+//        if (bitmap == null) {
+//            bitmap = loadBitmapFromView(mTextLl);
+//            mTextTv.setText(mTextTv.getText());
+//            mTextTv.requestFocus();
+//            if (bitmap != null) {
+//                //Toast.makeText(mContext, "方案四成功", //Toast.LENGTH_SHORT).show();
+//                Log.e("Bitmap", "方案四成功");
+//            }
+//        }
 //        float top = mTextLl.getTop();
 //        float left = mTextLl.getLeft();
         int[] location = new int[2];
