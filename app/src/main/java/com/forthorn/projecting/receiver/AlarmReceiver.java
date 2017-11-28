@@ -36,12 +36,11 @@ public class AlarmReceiver extends BroadcastReceiver {
         Log.e("onReceive", "Task： ID=" + taskId + "运行状态：" + taskRunningStatus);
         if (taskId != -1) {
             if (taskRunningStatus == 0) {
-                mRxManager.post(RxEvent.EXECUTE_TASK, taskId);
+//                mRxManager.post(RxEvent.EXECUTE_TASK, taskId);
             } else if (taskRunningStatus == 1) {
-                mRxManager.post(RxEvent.FINISH_TASK, taskId);
+//                mRxManager.post(RxEvent.FINISH_TASK, taskId);
             }
         }
-        Log.e("onReceive", mAlarmListener == null ? "mAlarmListener = null " : "mAlarmListener not null");
     }
 
 

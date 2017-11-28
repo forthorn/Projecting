@@ -27,7 +27,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.forthorn.projecting.api.Api;
@@ -52,7 +51,6 @@ import com.forthorn.projecting.receiver.AlarmReceiver;
 import com.forthorn.projecting.receiver.DeviceReceiver;
 import com.forthorn.projecting.util.GsonUtils;
 import com.forthorn.projecting.util.SPUtils;
-import com.forthorn.projecting.util.ToastUtil;
 import com.forthorn.projecting.widget.NoticeDialog;
 import com.pili.pldroid.player.AVOptions;
 import com.pili.pldroid.player.PLMediaPlayer;
@@ -138,6 +136,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private static final int HANDLER_MESSAGE_TIMING_LOGIN = 0X2;
     private static final int HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT = 0X3;
     private static final int HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE = 0X4;
+    private static final int HANDLER_MESSAGE_START_ALARM = 0X5;
+    private static final int HANDLER_MESSAGE_FINISH_ALARM = 0X6;
 
     private long nextHourTimeStamp = 0L;
     private List<Integer> mTaskIdList = new ArrayList<>();
@@ -248,6 +248,25 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     requestTasks(nextHourTimeStamp);
                     mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE, 3600000L);
                     break;
+            }
+            if (msg.what != HANDLER_MESSAGE_TIMING_LOGIN && msg.what != HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT
+                    && msg.what != HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE) {
+                int taskId = msg.what;
+                Log.e("任务消息", "taskID=" + taskId);
+                int type = msg.arg1;
+                if (type == 0) {
+                    return;
+                }
+                switch (type) {
+                    case HANDLER_MESSAGE_START_ALARM:
+                        Log.e("任务消息", "task类型=执行任务");
+                        executeTask(taskId);
+                        break;
+                    case HANDLER_MESSAGE_FINISH_ALARM:
+                        Log.e("任务消息", "task类型=结束任务");
+                        finishTask(taskId);
+                        break;
+                }
             }
         }
     };
@@ -369,7 +388,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initData() {
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
         mUuid = uuidFactory.getDeviceUuid().toString();
-//        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
+        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
@@ -705,27 +724,13 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     }
 
     private void updateAlarmTask(Task task) {
-        // TODO: 11/4/2017 不确定是否生效
-        mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-        Intent intent = new Intent(AppConstant.ALARM_INTENT);
-        intent.setClass(mContext, AlarmReceiver.class);
-        intent.putExtra(AppConstant.TASK_ID, task.getId());
-        intent.putExtra(AppConstant.TASK_RUNNING_STATUS, task.getRunningStatus());
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, task.getId(),
-                intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        mAlarmManager.set(AlarmManager.RTC_WAKEUP, task.getStart_time() * 1000L, pendingIntent);
+        mHandler.removeMessages(task.getId());
+        addAlarmTask(task);
     }
 
 
     private void deleteAlarmTask(Task task) {
-        mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-        Intent intent = new Intent(AppConstant.ALARM_INTENT);
-        intent.setClass(mContext, AlarmReceiver.class);
-        intent.putExtra(AppConstant.TASK_ID, task.getId());
-        intent.putExtra(AppConstant.TASK_RUNNING_STATUS, task.getRunningStatus());
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, task.getId(),
-                intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        mAlarmManager.cancel(pendingIntent);
+        mHandler.removeMessages(task.getId());
     }
 
     /**
@@ -734,17 +739,13 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * @param task
      */
     private void setFinishAlarmTask(Task task) {
-        mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-        Intent intent = new Intent(AppConstant.ALARM_INTENT);
-        intent.setClass(mContext, AlarmReceiver.class);
-        intent.putExtra(AppConstant.TASK_ID, task.getId());
-        intent.putExtra(AppConstant.TASK_RUNNING_STATUS, task.getRunningStatus());
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, task.getId(),
-                intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        mAlarmManager.set(AlarmManager.RTC_WAKEUP, task.getFinish_time() * 1000L - 200L, pendingIntent);
+        mHandler.sendEmptyMessage(task.getId());
+        android.os.Message message = mHandler.obtainMessage();
+        message.what = task.getId();
+        message.arg1 = HANDLER_MESSAGE_FINISH_ALARM;
+        long time = task.getFinish_time() * 1000L - 200L - System.currentTimeMillis();
+        mHandler.sendMessageDelayed(message, time);
         Log.e("addFinishAlarmTask", "Task时间：" + task.getFinish_time() * 1000L);
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
-        //Toast.makeText(mContext, "设定：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)) + "结束当前任务", //Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -757,14 +758,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         if (new Integer(task.getId()).equals((Integer) mTaskIds.get(task.getType()))) {
             return;
         }
-        mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-        Intent intent = new Intent(AppConstant.ALARM_INTENT);
-        intent.setClass(mContext, AlarmReceiver.class);
-        intent.putExtra(AppConstant.TASK_ID, task.getId());
-        intent.putExtra(AppConstant.TASK_RUNNING_STATUS, task.getRunningStatus());
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, task.getId(),
-                intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        mAlarmManager.set(AlarmManager.RTC_WAKEUP, task.getStart_time() * 1000L, pendingIntent);
+        android.os.Message message = mHandler.obtainMessage();
+        message.what = task.getId();
+        message.arg1 = HANDLER_MESSAGE_START_ALARM;
+        long time = task.getStart_time() * 1000L - System.currentTimeMillis();
+        if (time < 0) {
+            return;
+        }
+        mHandler.sendMessageDelayed(message, time);
         Log.e("addAlarmTask", "Task时间：" + task.getStart_time() * 1000L);
     }
 
@@ -1209,6 +1210,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
 //        float top = mTextLl.getTop();
 //        float left = mTextLl.getLeft();
+        mTextTv.requestFocus();
         int[] location = new int[2];
         mTextTv.getLocationInWindow(location);
         float top = location[1];
@@ -1268,6 +1270,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 Log.e("Bitmap", "方案四成功");
             }
         }
+        mTextTv.requestFocus();
 //        float top = mTextLl.getTop();
 //        float left = mTextLl.getLeft();
         int[] location = new int[2];
@@ -1535,6 +1538,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         task.setRunningStatus(AppConstant.TASK_RUNNING_STATUS_GOING);
         DBUtils.getInstance().updateTask(task);
         setFinishAlarmTask(task);
+        if (mTextTv.getVisibility() == View.VISIBLE) {
+            mTextTv.requestFocus();
+        }
     }
 
     private void playText(Task task) {
@@ -1633,6 +1639,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 refreshStatus();
             }
         }, 2000);
+        if (mTextTv.getVisibility() == View.VISIBLE) {
+            mTextTv.requestFocus();
+        }
     }
 
 
@@ -1659,6 +1668,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mPictureFl.setVisibility(View.INVISIBLE);
                 mVideoFl.setVisibility(View.VISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
+                mTextTv.requestFocus();
                 //Toast.makeText(mContext, "当前状态：视频+文字广告", //Toast.LENGTH_SHORT).show();
                 break;
             case VIDEO:
@@ -1681,6 +1691,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mPictureFl.setVisibility(View.INVISIBLE);
                 mVideoFl.setVisibility(View.INVISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
+                mTextTv.requestFocus();
                 //Toast.makeText(mContext, "当前状态：文字广告", //Toast.LENGTH_SHORT).show();
                 break;
             case PICTURE_TEXT:
@@ -1689,6 +1700,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mPictureFl.setVisibility(View.VISIBLE);
                 mVideoFl.setVisibility(View.INVISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
+                mTextTv.requestFocus();
                 //Toast.makeText(mContext, "当前状态：图片+文字广告", //Toast.LENGTH_SHORT).show();
                 break;
             case IDLE:
@@ -1704,6 +1716,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mPictureFl.setVisibility(View.INVISIBLE);
                 mVideoFl.setVisibility(View.INVISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
+                mTextTv.requestFocus();
                 //Toast.makeText(mContext, "当前状态：文字", //Toast.LENGTH_SHORT).show();
                 break;
         }
