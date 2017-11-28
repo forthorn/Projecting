@@ -131,6 +131,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private RxManager mRxManager;
 
     private String mSnapFileName;
+    private String mSnapFilePath;
+
     private boolean mEnableLock;
     private static final int REQUEST_CODE_ADMIN = 0x1;
     private static final int HANDLER_MESSAGE_TIMING_LOGIN = 0X2;
@@ -216,9 +218,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         //Toast.makeText(mContext, "下一个整点是：" + sdf.format(new Date(nextHourTimeStamp * 1000L)), //Toast.LENGTH_SHORT).show();
         Log.e("Alarm", "下一个整点是：" + sdf.format(new Date(nextHourTimeStamp * 1000L)));
         //Toast.makeText(mContext, "下一个请求将在：" + sdf.format(new Date(nextHourTimeStamp * 1000L - 300000L)), //Toast.LENGTH_SHORT).show();
-        Log.e("Alarm", "下一个请求将在：" + sdf.format(new Date(nextHourTimeStamp * 1000L - 300000L)));
-        Log.e("Alarm", (nextHourTimeStamp * 1000L - 300000L - System.currentTimeMillis()) / 1000 + "秒后请求");
-        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE, nextHourTimeStamp * 1000L - 300000L - System.currentTimeMillis());
+        long nextTime = nextHourTimeStamp * 1000L - 3540000L;
+        if (nextTime - System.currentTimeMillis() < 0) {
+            nextTime = nextTime + 3600000L;
+            requestTasks(nextHourTimeStamp);
+        }
+        Log.e("Alarm", "下一个请求将在：" + sdf.format(new Date(nextTime)));
+        Log.e("Alarm", (nextTime - System.currentTimeMillis()) / 1000 + "秒后请求");
+        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE, nextTime - System.currentTimeMillis());
     }
 
 
@@ -253,6 +260,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             return;
         }
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm");
+        Log.e("request", "请求：" + sdf.format(new Date(timeStamp * 1000L)) + "的任务");
         //Toast.makeText(mContext, "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务", //Toast.LENGTH_SHORT).show();
         Call<TaskRes> taskResCall = Api.getDefault(HostType.VOM_HOST).getTaskList(Api.getCacheControl(),
                 String.valueOf(mDeviceId), String.valueOf(timeStamp));
@@ -516,6 +524,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
     }
 
+
+    /**
+     * 由于每小时都查询任务，不再进行离线消息处理
+     *
+     * @param event
+     */
     public void onEventMainThread(OfflineMessageEvent event) {
         List<Message> newMessageList = event.getOfflineMessageList();
         for (Message message : newMessageList) {
@@ -527,14 +541,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 case voice:
                     break;
                 case custom:
-                    CustomContent customContent = (CustomContent) message.getContent();
-                    Task task = GsonUtils.convertObj(customContent.toJson(), Task.class);
-                    Log.e("CustomContent", customContent.toJson());
-                    if (task == null) {
-                        return;
-                    }
-                    Log.e("offMsg", task.toString());
-                    handlerOfflineMessageEvent(task);
+//                    CustomContent customContent = (CustomContent) message.getContent();
+//                    Task task = GsonUtils.convertObj(customContent.toJson(), Task.class);
+//                    Log.e("CustomContent", customContent.toJson());
+//                    if (task == null) {
+//                        return;
+//                    }
+//                    Log.e("offMsg", task.toString());
+//                    handlerOfflineMessageEvent(task);
                     break;
                 case eventNotification:
                     break;
@@ -544,6 +558,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
     }
 
+    /**
+     * 处理离线消息
+     * 变更：由于每个小时都会请求任务，所以不进行处理
+     *
+     * @param task
+     */
     private void handlerOfflineMessageEvent(Task task) {
         switch (task.getType()) {
             case AppConstant.TASK_TYPE_PICTURE:
@@ -1011,23 +1031,39 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void snapshot(Task task) {
         // TODO: 11/4/2017   需要验证视频
         //Toast.makeText(mContext, "当前状态：" + mStatus, //Toast.LENGTH_SHORT).show();
-        String filePath = saveCurrentImage();
+        mSnapFilePath = saveCurrentImage();
         String time = task.getCreate_time() + "";
         RequestBody timeRB = RequestBody.create(MediaType.parse("text/plain"), time);
         RequestBody mDeviceIdRB = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(mDeviceId));
-        RequestBody snapshotRB = RequestBody.create(MediaType.parse("image/jpeg"), new File(filePath));
+        RequestBody snapshotRB = RequestBody.create(MediaType.parse("image/jpeg"), new File(mSnapFilePath));
         MultipartBody.Part snapshotPt = MultipartBody.Part.createFormData("attachment", mSnapFileName, snapshotRB);
         Call<BaseResponse> uploadCall = Api.getDefault(HostType.VOM_HOST).uploadSnapshoot(Api.getCacheControl(),
                 timeRB, mDeviceIdRB, snapshotPt);
-        Log.e("snapshot", filePath);
+        Log.e("snapshot", mSnapFilePath);
         uploadCall.enqueue(new Callback<BaseResponse>() {
             @Override
             public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
                 Log.e("snapshot", response.body().getMsg() == null ? "上传成功" : response.body().getMsg());
+                try {
+                    File file = new File(mSnapFilePath);
+                    if (file.exists()) {
+                        file.delete();
+                    }
+                } catch (Exception e) {
+
+                }
             }
 
             @Override
             public void onFailure(Call<BaseResponse> call, Throwable t) {
+                try {
+                    File file = new File(mSnapFilePath);
+                    if (file.exists()) {
+                        file.delete();
+                    }
+                } catch (Exception e) {
+
+                }
                 Log.e("snapshot", t.getMessage() == null ? "上传截图失败" : t.getMessage());
             }
         });
@@ -1132,6 +1168,17 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         Canvas canvas = new Canvas(screenshot);
         canvas.drawBitmap(bottomBipmap, 0, 0, new Paint());
         Bitmap bitmap = null;
+        //方案 一 一
+        if (bitmap == null) {
+            mTextTv.setDrawingCacheEnabled(true);
+            Bitmap viewBitmap = mTextTv.getDrawingCache();
+            bitmap = Bitmap.createBitmap(viewBitmap);
+            mTextTv.setDrawingCacheEnabled(false);
+            if (bitmap != null) {
+                //Toast.makeText(mContext, "方案一成功", //Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案一成功");
+            }
+        }
 //        if (bitmap == null) {
 //            bitmap = loadBitmapFromView(mTextTv);
 //            mTextTv.setText(mTextTv.getText());
@@ -1141,27 +1188,16 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 //                Log.e("Bitmap", "方案二失败");
 //            }
 //        }
-        //方案 一 一
-//        if (bitmap == null) {
-//            mTextTv.setDrawingCacheEnabled(true);
-//            Bitmap viewBitmap = mTextTv.getDrawingCache();
-//            bitmap = Bitmap.createBitmap(viewBitmap);
-//            mTextTv.setDrawingCacheEnabled(false);
-//            if (bitmap != null) {
-//                //Toast.makeText(mContext, "方案一成功", //Toast.LENGTH_SHORT).show();
-//                Log.e("Bitmap", "方案一成功");
-//            }
-//        }
-//        if (bitmap == null) {
-//            mTextLl.setDrawingCacheEnabled(true);
-//            Bitmap view2Bitmap = mTextLl.getDrawingCache();
-//            bitmap = Bitmap.createBitmap(view2Bitmap);
-//            mTextLl.setDrawingCacheEnabled(false);
-//            if (bitmap != null) {
-//                //Toast.makeText(mContext, "方案三成功", //Toast.LENGTH_SHORT).show();
-//                Log.e("Bitmap", "方案三成功");
-//            }
-//        }
+        if (bitmap == null) {
+            mTextLl.setDrawingCacheEnabled(true);
+            Bitmap view2Bitmap = mTextLl.getDrawingCache();
+            bitmap = Bitmap.createBitmap(view2Bitmap);
+            mTextLl.setDrawingCacheEnabled(false);
+            if (bitmap != null) {
+                //Toast.makeText(mContext, "方案三成功", //Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案三成功");
+            }
+        }
         if (bitmap == null) {
             bitmap = loadBitmapFromView(mTextLl);
             mTextTv.setText(mTextTv.getText());
@@ -1184,6 +1220,13 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     }
 
 
+    /**
+     * 验证 方案2-1 是可行的
+     *
+     * @param bottomBipmap
+     * @param view
+     * @return
+     */
     private Bitmap compositeBitmap2(Bitmap bottomBipmap, View view) {
         WindowManager windowManager = getWindowManager();
         Display display = windowManager.getDefaultDisplay();
@@ -1196,35 +1239,26 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         canvas.drawBitmap(bottomBipmap, (w - bitW) / 2, (h - bitH) / 2, new Paint());
         canvas.drawBitmap(bottomBipmap, 0, 0, new Paint());
         Bitmap bitmap = null;
-//        if (bitmap == null) {
-//            bitmap = loadBitmapFromView(mTextTv);
-//            mTextTv.setText(mTextTv.getText());
-//            mTextTv.requestFocus();
-//            if (bitmap != null) {
-//                //Toast.makeText(mContext, "方案二失败", //Toast.LENGTH_SHORT).show();
-//                Log.e("Bitmap", "方案二失败");
-//            }
-//        }
-//        if (bitmap == null) {
-//            mTextTv.setDrawingCacheEnabled(true);
-//            Bitmap viewBitmap = mTextTv.getDrawingCache();
-//            bitmap = Bitmap.createBitmap(viewBitmap);
-//            mTextTv.setDrawingCacheEnabled(false);
-//            if (bitmap != null) {
-//                //Toast.makeText(mContext, "方案一成功", //Toast.LENGTH_SHORT).show();
-//                Log.e("Bitmap", "方案一成功");
-//            }
-//        }
-//        if (bitmap == null) {
-//            mTextLl.setDrawingCacheEnabled(true);
-//            Bitmap view2Bitmap = mTextLl.getDrawingCache();
-//            bitmap = Bitmap.createBitmap(view2Bitmap);
-//            mTextLl.setDrawingCacheEnabled(false);
-//            if (bitmap != null) {
-//                //Toast.makeText(mContext, "方案三成功", //Toast.LENGTH_SHORT).show();
-//                Log.e("Bitmap", "方案三成功");
-//            }
-//        }
+        if (bitmap == null) {
+            mTextTv.setDrawingCacheEnabled(true);
+            Bitmap viewBitmap = mTextTv.getDrawingCache();
+            bitmap = Bitmap.createBitmap(viewBitmap);
+            mTextTv.setDrawingCacheEnabled(false);
+            if (bitmap != null) {
+                //Toast.makeText(mContext, "方案一成功", //Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案一成功");
+            }
+        }
+        if (bitmap == null) {
+            mTextLl.setDrawingCacheEnabled(true);
+            Bitmap view2Bitmap = mTextLl.getDrawingCache();
+            bitmap = Bitmap.createBitmap(view2Bitmap);
+            mTextLl.setDrawingCacheEnabled(false);
+            if (bitmap != null) {
+                //Toast.makeText(mContext, "方案三成功", //Toast.LENGTH_SHORT).show();
+                Log.e("Bitmap", "方案三成功");
+            }
+        }
         if (bitmap == null) {
             bitmap = loadBitmapFromView(mTextLl);
             mTextTv.setText(mTextTv.getText());
@@ -1549,7 +1583,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                         mVideoView.pause();
                         mStatus = Status.IDLE_TEXT;
                     }
-                } else if (task.getType() == AppConstant.TASK_TYPE_TEXT) {
+                } else if (task.getType() == AppConstant.TASK_TYPE_TEXT ||
+                        task.getType() == AppConstant.TASK_TYPE_WEATHER) {
                     if (mTextTv.getTag().equals(task.getId())) {
                         mTextTv.setText("");
                         mStatus = Status.VIDEO;
@@ -1568,7 +1603,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                         mPicturePager.stop();
                         mStatus = Status.IDLE_TEXT;
                     }
-                } else if (task.getType() == AppConstant.TASK_TYPE_TEXT) {
+                } else if (task.getType() == AppConstant.TASK_TYPE_TEXT ||
+                        task.getType() == AppConstant.TASK_TYPE_WEATHER) {
                     if (mTextTv.getTag().equals(task.getId())) {
                         mTextTv.setText("");
                         mStatus = Status.PICTURE;
