@@ -6,9 +6,9 @@ android {
     defaultConfig {
         applicationId "com.forthorn.projecting"
         minSdkVersion 15
-        targetSdkVersion 19
-        versionCode 23
-        versionName "1.6.4"
+        targetSdkVersion 20
+        versionCode 24
+        versionName "1.6.6"
         //方案 2-4
         ndk {
             //选择要添加的对应cpu类型的.so库。

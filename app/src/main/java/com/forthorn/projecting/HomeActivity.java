@@ -233,6 +233,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         @Override
         public void handleMessage(android.os.Message msg) {
             super.handleMessage(msg);
+            Log.e("handlerMsg", "what:" + msg.what + "__arg1:" + msg.arg1);
             switch (msg.what) {
                 case HANDLER_MESSAGE_TIMING_LOGIN:
                     //Toast.makeText(mContext, "每十分钟登录一次", //Toast.LENGTH_SHORT).show();
@@ -388,7 +389,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initData() {
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
         mUuid = uuidFactory.getDeviceUuid().toString();
-        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
+//        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
@@ -763,8 +764,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         message.arg1 = HANDLER_MESSAGE_START_ALARM;
         long time = task.getStart_time() * 1000L - System.currentTimeMillis();
         if (time < 0) {
-            return;
+            time = 100L;
         }
+        Log.e("addAlarmTask", "DelayTime:" + time + "___ID:" + task.getId());
         mHandler.sendMessageDelayed(message, time);
         Log.e("addAlarmTask", "Task时间：" + task.getStart_time() * 1000L);
     }
