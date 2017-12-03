@@ -51,6 +51,7 @@ import com.forthorn.projecting.receiver.AlarmReceiver;
 import com.forthorn.projecting.receiver.DeviceReceiver;
 import com.forthorn.projecting.util.GsonUtils;
 import com.forthorn.projecting.util.SPUtils;
+import com.forthorn.projecting.widget.AutoScrollTextView;
 import com.forthorn.projecting.widget.NoticeDialog;
 import com.pili.pldroid.player.AVOptions;
 import com.pili.pldroid.player.PLMediaPlayer;
@@ -107,7 +108,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     //文本
     private FrameLayout mTextFl;
     private LinearLayout mTextLl;
-    private TextView mTextTv;
+    private AutoScrollTextView mTextTv;
     private LinearLayout mTextServerHolderLl;
 
     private Context mContext;
@@ -376,7 +377,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         //文字
         mTextFl = (FrameLayout) findViewById(R.id.text_fl);
         mTextLl = (LinearLayout) findViewById(R.id.text_ll);
-        mTextTv = (TextView) findViewById(R.id.text_tv);
+        mTextTv = (AutoScrollTextView) findViewById(R.id.text_tv);
         mTextTv.setEllipsize(TextUtils.TruncateAt.MARQUEE);
         mTextTv.setSingleLine(true);
         mTextTv.setSelected(true);
@@ -1007,6 +1008,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         String filePath = null;
         if (download != null) {
             filePath = download.getPath();
+            Downloader.getInstance().setCurrentFilePath(filePath);
             if (!new File(filePath).exists()) {
                 DBUtils.getInstance().deleteDownload(download);
                 filePath = task.getContent();
@@ -1548,6 +1550,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void playText(Task task) {
         mTextTv.setTag(task.getId());
         mTextTv.setText(task.getContent());
+        mTextTv.init(getWindowManager());
+        mTextTv.startScroll();
     }
 
 

@@ -1,6 +1,7 @@
 package com.forthorn.projecting.downloader;
 
 import android.os.Environment;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
@@ -25,7 +26,7 @@ import java.io.File;
 public class Downloader {
 
     private static Downloader sDownloader;
-
+    private String mCurrentFilePath;
 
     private static class InstanceHolder {
         private static final Downloader DOWNLOADER = new Downloader();
@@ -33,6 +34,14 @@ public class Downloader {
 
     public static Downloader getInstance() {
         return InstanceHolder.DOWNLOADER;
+    }
+
+    public String getCurrentFilePath() {
+        return mCurrentFilePath;
+    }
+
+    public void setCurrentFilePath(String currentFilePath) {
+        mCurrentFilePath = currentFilePath;
     }
 
     public void download(Task task) {
@@ -99,13 +108,38 @@ public class Downloader {
         if (!dir.exists()) {
             dir.mkdir();
         }
-        while (getFolderSize(dir) > 700 * 1024 * 1024) {
+        while (getFolderSize(dir) > 1024 * 1024 * 1024) {
             Download download = DBUtils.getInstance().findEarliestDownload();
-            File earliestFile = new File(download.getPath());
-            if (earliestFile.exists()) {
-                earliestFile.delete();
+            if (download != null) {
+                if (!TextUtils.isEmpty(download.getPath())) {
+                    File earliestFile = new File(download.getPath());
+                    if (earliestFile.exists()) {
+                        earliestFile.delete();
+                    }
+                }
+                DBUtils.getInstance().deleteDownload(download);
+            } else {
+                File[] files = dir.listFiles();
+                if (files.length == 0) {
+                    break;
+                }
+                int index = 0;
+                long earliestLastModify = files[0].lastModified();
+                for (int i = 0; i < files.length; i++) {
+                    if (files[i].lastModified() < earliestLastModify) {
+                        index = i;
+                        earliestLastModify = files[i].lastModified();
+                    }
+                }
+                try {
+                    if (files[index].exists() && files[index].isFile()) {
+                        if (getCurrentFilePath() != null || !files[index].getPath().equals(getCurrentFilePath())) {
+                            files[index].delete();
+                        }
+                    }
+                } catch (Exception e) {
+                }
             }
-            DBUtils.getInstance().deleteDownload(download);
         }
         return dir.toString();
     }
