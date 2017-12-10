@@ -155,7 +155,7 @@ public class AutoScrollTextView extends TextView implements View.OnClickListener
         if (!isStarting) {
             return;
         }
-        step += 0.5;//0.5为文字滚动速度。
+        step += 2;//0.5为文字滚动速度。
         if (step > temp_view_plus_two_text_length)
             step = textLength;
         invalidate();

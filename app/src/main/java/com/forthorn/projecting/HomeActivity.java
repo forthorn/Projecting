@@ -3,7 +3,6 @@ package com.forthorn.projecting;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.KeyguardManager;
-import android.app.PendingIntent;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -27,6 +26,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.forthorn.projecting.api.Api;
@@ -162,6 +162,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         //每十分钟登录一下
         mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000);
         setRequestAlarm();
+        mockPlayVideo();
     }
 
     private void updateStatus() {
@@ -378,11 +379,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mTextFl = (FrameLayout) findViewById(R.id.text_fl);
         mTextLl = (LinearLayout) findViewById(R.id.text_ll);
         mTextTv = (AutoScrollTextView) findViewById(R.id.text_tv);
-        mTextTv.setEllipsize(TextUtils.TruncateAt.MARQUEE);
-        mTextTv.setSingleLine(true);
-        mTextTv.setSelected(true);
-        mTextTv.setFocusable(true);
-        mTextTv.setFocusableInTouchMode(true);
         mTextServerHolderLl = (LinearLayout) findViewById(R.id.text_server_holder_ll);
         mIdleAboutIv.setOnClickListener(this);
     }
@@ -1019,10 +1015,48 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             filePath = task.getContent();
             //Toast.makeText(mContext, "播放网络视频" + filePath, //Toast.LENGTH_SHORT).show();
         }
+
         mVideoView.setVideoPath(filePath);
         mVideoView.start();
         mVideoView.setTag(task.getId());
     }
+
+
+    List<String> mList = new ArrayList<>();
+
+    int index;
+
+    private void mockPlayVideo() {
+        mStatus = Status.VIDEO_TEXT;
+        refreshStatus();
+        index = index % 4;
+        mList.clear();
+        mVideoView.pause();
+        mVideoView.stopPlayback();
+        String path1 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Projecting/1.wmv";
+        String path2 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Projecting/2.avi";
+        String path3 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Projecting/3.rmvb";
+        String path4 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Projecting/4.mkv";
+        mList.add(path1);
+        mList.add(path2);
+        mList.add(path3);
+        mList.add(path4);
+        mVideoView.setVideoPath(mList.get(index));
+        Toast.makeText(mContext, "播放" + mList.get(index), Toast.LENGTH_SHORT).show();
+        mTextTv.setText("当前正在播放" + mList.get(index) + "   分割线1" + "当前正在播放" +
+                mList.get(index) + "   分割线2" + "当前正在播放" + mList.get(index) + "   分割线3");
+        mTextTv.init(getWindowManager());
+        mTextTv.startScroll();
+        Log.e("status", mStatus.getCode() + "" + mStatus.name());
+        mTextTv.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mockPlayVideo();
+            }
+        }, 30L * 1000L);
+        index++;
+    }
+
 
     private void pauseOrStartPlay() {
 
@@ -1205,8 +1239,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
         if (bitmap == null) {
             bitmap = loadBitmapFromView(mTextLl);
-            mTextTv.setText(mTextTv.getText());
-            mTextTv.requestFocus();
             if (bitmap != null) {
                 //Toast.makeText(mContext, "方案四成功", //Toast.LENGTH_SHORT).show();
                 Log.e("Bitmap", "方案四成功");
@@ -1214,7 +1246,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
 //        float top = mTextLl.getTop();
 //        float left = mTextLl.getLeft();
-        mTextTv.requestFocus();
         int[] location = new int[2];
         mTextTv.getLocationInWindow(location);
         float top = location[1];
@@ -1267,14 +1298,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
         if (bitmap == null) {
             bitmap = loadBitmapFromView(mTextLl);
-            mTextTv.setText(mTextTv.getText());
-            mTextTv.requestFocus();
             if (bitmap != null) {
                 //Toast.makeText(mContext, "方案四成功", //Toast.LENGTH_SHORT).show();
                 Log.e("Bitmap", "方案四成功");
             }
         }
-        mTextTv.requestFocus();
 //        float top = mTextLl.getTop();
 //        float left = mTextLl.getLeft();
         int[] location = new int[2];
@@ -1542,9 +1570,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         task.setRunningStatus(AppConstant.TASK_RUNNING_STATUS_GOING);
         DBUtils.getInstance().updateTask(task);
         setFinishAlarmTask(task);
-        if (mTextTv.getVisibility() == View.VISIBLE) {
-            mTextTv.requestFocus();
-        }
     }
 
     private void playText(Task task) {
@@ -1645,9 +1670,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 refreshStatus();
             }
         }, 2000);
-        if (mTextTv.getVisibility() == View.VISIBLE) {
-            mTextTv.requestFocus();
-        }
     }
 
 
@@ -1674,7 +1696,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mPictureFl.setVisibility(View.INVISIBLE);
                 mVideoFl.setVisibility(View.VISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
-                mTextTv.requestFocus();
                 //Toast.makeText(mContext, "当前状态：视频+文字广告", //Toast.LENGTH_SHORT).show();
                 break;
             case VIDEO:
@@ -1697,7 +1718,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mPictureFl.setVisibility(View.INVISIBLE);
                 mVideoFl.setVisibility(View.INVISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
-                mTextTv.requestFocus();
                 //Toast.makeText(mContext, "当前状态：文字广告", //Toast.LENGTH_SHORT).show();
                 break;
             case PICTURE_TEXT:
@@ -1706,7 +1726,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mPictureFl.setVisibility(View.VISIBLE);
                 mVideoFl.setVisibility(View.INVISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
-                mTextTv.requestFocus();
                 //Toast.makeText(mContext, "当前状态：图片+文字广告", //Toast.LENGTH_SHORT).show();
                 break;
             case IDLE:
@@ -1722,7 +1741,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mPictureFl.setVisibility(View.INVISIBLE);
                 mVideoFl.setVisibility(View.INVISIBLE);
                 mIdleFl.setVisibility(View.VISIBLE);
-                mTextTv.requestFocus();
                 //Toast.makeText(mContext, "当前状态：文字", //Toast.LENGTH_SHORT).show();
                 break;
         }
