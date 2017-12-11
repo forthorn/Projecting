@@ -250,6 +250,7 @@ public class TxVideoPlayerController
                 setTopBottomVisible(false);
                 mImage.setVisibility(View.VISIBLE);
                 mCompleted.setVisibility(View.VISIBLE);
+                mNiceVideoPlayer.restart();
                 break;
         }
     }

@@ -2,6 +2,7 @@ package com.xiao.nicevideoplayer;
 
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.media.AudioManager;
@@ -696,5 +697,12 @@ public class NiceVideoPlayer extends FrameLayout
             mController.reset();
         }
         Runtime.getRuntime().gc();
+    }
+
+    public Bitmap getTextViewBitmap() {
+        if (mTextureView == null) {
+            return null;
+        }
+        return mTextureView.getBitmap();
     }
 }

@@ -16,17 +16,27 @@
         android:layout_marginRight="18dp"
         android:orientation="horizontal">
 
-        <com.forthorn.projecting.widget.AutoScrollTextView
-            android:id="@+id/text_tv"
+        <LinearLayout
+            android:id="@+id/text_tv_ll"
             android:layout_width="0dp"
             android:layout_height="34dp"
             android:layout_weight="1"
             android:background="@drawable/radius_text_bg"
-            android:gravity="center"
-            android:lines="1"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:textColor="@color/colorWhite"/>
+            android:gravity="center_vertical"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp">
+
+            <com.forthorn.projecting.widget.AutoScrollTextView
+                android:id="@+id/text_tv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:lines="1"
+                android:text=""
+                android:textColor="@color/colorWhite"
+                android:textSize="14sp"/>
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/text_server_holder_ll"

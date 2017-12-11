@@ -3,10 +3,12 @@ package com.forthorn.projecting.widget;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
@@ -55,7 +57,9 @@ public class AutoScrollTextView extends TextView implements View.OnClickListener
 
 
     public void init(WindowManager windowManager) {
+        this.measure(0, 0);
         paint = getPaint();
+        paint.setColor(Color.WHITE);
         text = getText().toString();
         textLength = paint.measureText(text);
         viewWidth = getWidth();
@@ -97,6 +101,7 @@ public class AutoScrollTextView extends TextView implements View.OnClickListener
 
     }
 
+
     public static class SavedState extends BaseSavedState {
         public boolean isStarting = false;
         public float step = 0.0f;
@@ -113,8 +118,8 @@ public class AutoScrollTextView extends TextView implements View.OnClickListener
         }
 
 
-        public static final Parcelable.Creator<SavedState> CREATOR
-                = new Parcelable.Creator<SavedState>() {
+        public static final Creator<SavedState> CREATOR
+                = new Creator<SavedState>() {
 
             public SavedState[] newArray(int size) {
                 return new SavedState[size];
@@ -155,12 +160,18 @@ public class AutoScrollTextView extends TextView implements View.OnClickListener
         if (!isStarting) {
             return;
         }
-        step += 2;//0.5为文字滚动速度。
+        step += 2.5;//0.5为文字滚动速度。
         if (step > temp_view_plus_two_text_length)
             step = textLength;
         invalidate();
 
     }
+
+    @Override
+    public void setText(CharSequence text, BufferType type) {
+        super.setText(text, type);
+    }
+
 
     @Override
     public void onClick(View v) {

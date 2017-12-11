@@ -94,7 +94,7 @@ public class Downloader {
 
 
     /**
-     * 检查磁盘空间大小，大于700M则先删除文件再下载
+     * 检查磁盘空间大小，大于2048M则先删除文件再下载
      */
     private String checkDiskSpaceAndDir() {
         File sdcardDir = null;
@@ -108,7 +108,7 @@ public class Downloader {
         if (!dir.exists()) {
             dir.mkdir();
         }
-        while (getFolderSize(dir) > 1024 * 1024 * 1024) {
+        while (getFolderSize(dir) > 2048 * 1024 * 1024) {
             Download download = DBUtils.getInstance().findEarliestDownload();
             if (download != null) {
                 if (!TextUtils.isEmpty(download.getPath())) {
