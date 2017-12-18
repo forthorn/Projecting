@@ -42,11 +42,6 @@
         <activity
             android:name=".AboutActivity"
             android:screenOrientation="landscape"></activity>
-        <activity
-            android:name=".MainActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:screenOrientation="portrait">
-        </activity>
 
         <receiver android:name=".receiver.BootReceiver">
             <!--<intent-filter>-->
@@ -66,14 +61,6 @@
 
         <receiver android:name=".receiver.AlarmReceiver">
         </receiver>
-
-        <activity
-            android:name=".PlayerActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/title_activity_player"
-            android:theme="@style/FullscreenTheme">
-        </activity>
-
 
     </application>
 

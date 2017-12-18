@@ -45,6 +45,11 @@ public class Downloader {
     }
 
     public void download(Task task) {
+        long time = task.getStart_time() * 1000L - System.currentTimeMillis();
+        if (time < 5 * 60 * 1000L) {
+            Log.e("CancelD", "播放时间距离现在小于5分钟，不进行下载");
+            return;
+        }
         String dir = checkDiskSpaceAndDir();
         Download download = new Download();
         String fileName = MD5Util.getMD5Str(task.getContent());
@@ -56,6 +61,7 @@ public class Downloader {
         if (DBUtils.getInstance().findDownload(download.getId()) == null) {
             DBUtils.getInstance().insertDownload(download);
         }
+        FileDownloader.getImpl().setMaxNetworkThreadCount(1);
         FileDownloader.getImpl().create(task.getContent())
                 .setPath(dir + File.separator + fileName, false)
                 .setTag(new Integer(task.getId()))
@@ -108,7 +114,7 @@ public class Downloader {
         if (!dir.exists()) {
             dir.mkdir();
         }
-        while (getFolderSize(dir) > 2048 * 1024 * 1024) {
+        while (getFolderSize(dir) > 2048) {
             Download download = DBUtils.getInstance().findEarliestDownload();
             if (download != null) {
                 if (!TextUtils.isEmpty(download.getPath())) {
@@ -165,6 +171,6 @@ public class Downloader {
             e.printStackTrace();
         }
         Log.e("当前缓存大小：", size / 1024 / 1024 + "M");
-        return size;
+        return size / 1024L / 1024L;
     }
 }
