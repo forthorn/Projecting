@@ -52,10 +52,9 @@ import com.forthorn.projecting.util.GsonUtils;
 import com.forthorn.projecting.util.SPUtils;
 import com.forthorn.projecting.widget.AutoScrollTextView;
 import com.forthorn.projecting.widget.NoticeDialog;
-import com.xiao.nicevideoplayer.NiceVideoPlayer;
-import com.xiao.nicevideoplayer.NiceVideoPlayerManager;
-import com.xiao.nicevideoplayer.SimpleVideoPlayerController;
-import com.xiao.nicevideoplayer.TxVideoPlayerController;
+import com.pili.pldroid.player.AVOptions;
+import com.pili.pldroid.player.PLMediaPlayer;
+import com.pili.pldroid.player.widget.PLVideoTextureView;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -92,9 +91,7 @@ import static com.forthorn.projecting.app.Status.IDLE;
 public class HomeActivity extends Activity implements View.OnClickListener, AlarmReceiver.AlarmListener {
     //视频
     private FrameLayout mVideoFl;
-    //    private PLVideoTextureView mVideoView;
-    private NiceVideoPlayer mVideoView2;
-    private SimpleVideoPlayerController mController;
+    private PLVideoTextureView mVideoView;
     //图片
     private FrameLayout mPictureFl;
     private AutoViewPager mPicturePager;
@@ -165,7 +162,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         //每十分钟登录一下
         mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000);
         setRequestAlarm();
-//        mockPlayVideo();
     }
 
     private void updateStatus() {
@@ -343,22 +339,19 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initPlayer() {
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
-//        int codec = getIntent().getIntExtra("mediaCodec", AVOptions.MEDIA_CODEC_HW_DECODE);
-//        AVOptions options = new AVOptions();
-//        options.setInteger(AVOptions.KEY_PREPARE_TIMEOUT, 10 * 1000);
-//        options.setInteger(AVOptions.KEY_MEDIACODEC, codec);
-//        mVideoView.setDisplayAspectRatio(PLVideoTextureView.ASPECT_RATIO_FIT_PARENT);
-//        mVideoView.setAVOptions(options);
-//        mVideoView.setDebugLoggingEnabled(false);
-//        mVideoView.setOnInfoListener(mOnInfoListener);
-//        mVideoView.setOnVideoSizeChangedListener(mOnVideoSizeChangedListener);
-//        mVideoView.setOnBufferingUpdateListener(mOnBufferingUpdateListener);
-//        mVideoView.setOnCompletionListener(mOnCompletionListener);
-//        mVideoView.setOnErrorListener(mOnErrorListener);
+        int codec = getIntent().getIntExtra("mediaCodec", AVOptions.MEDIA_CODEC_HW_DECODE);
+        AVOptions options = new AVOptions();
+        options.setInteger(AVOptions.KEY_PREPARE_TIMEOUT, 10 * 1000);
+        options.setInteger(AVOptions.KEY_MEDIACODEC, codec);
+        mVideoView.setDisplayAspectRatio(PLVideoTextureView.ASPECT_RATIO_FIT_PARENT);
+        mVideoView.setAVOptions(options);
+        mVideoView.setDebugLoggingEnabled(false);
+        mVideoView.setOnInfoListener(mOnInfoListener);
+        mVideoView.setOnVideoSizeChangedListener(mOnVideoSizeChangedListener);
+        mVideoView.setOnBufferingUpdateListener(mOnBufferingUpdateListener);
+        mVideoView.setOnCompletionListener(mOnCompletionListener);
+        mVideoView.setOnErrorListener(mOnErrorListener);
 
-        mVideoView2.setPlayerType(NiceVideoPlayer.TYPE_IJK);
-        mController = new SimpleVideoPlayerController(this);
-        mVideoView2.setController(mController);
     }
 
     private void initIM() {
@@ -369,8 +362,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initView() {
         //视频
         mVideoFl = (FrameLayout) findViewById(R.id.video_fl);
-//        mVideoView = (PLVideoTextureView) findViewById(R.id.video_view);
-        mVideoView2 = (NiceVideoPlayer) findViewById(R.id.video_view2);
+        mVideoView = (PLVideoTextureView) findViewById(R.id.video_view);
         //图片
         mPictureFl = (FrameLayout) findViewById(R.id.picture_fl);
         mPicturePager = (AutoViewPager) findViewById(R.id.picture_view_pager);
@@ -844,8 +836,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * 休眠时暂停播放
      */
     private void pauseTask() {
-//        mVideoView.pause();
-        mVideoView2.pause();
+        mVideoView.pause();
         mPicturePager.stop();
     }
 
@@ -1024,20 +1015,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             filePath = task.getContent();
             //Toast.makeText(mContext, "播放网络视频" + filePath, //Toast.LENGTH_SHORT).show();
         }
-
-//
-//        mVideoView.pause();
-//        mVideoView.stopPlayback();
-//        mVideoView.setVideoPath(filePath);
-//        mVideoView.start();
-//        mVideoView.setTag(task.getId());
-
-
-        mVideoView2.pause();
-        mVideoView2.release();
-        mVideoView2.setUp(filePath, null);
-        mVideoView2.start();
-        mVideoView2.setTag(task.getId());
+        mVideoView.pause();
+        mVideoView.stopPlayback();
+        mVideoView.setVideoPath(filePath);
+        mVideoView.start();
+        mVideoView.setTag(task.getId());
     }
 
 
@@ -1050,10 +1032,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         refreshStatus();
         index = index % 4;
         mList.clear();
-//        mVideoView.pause();
-//        mVideoView.stopPlayback();
-        mVideoView2.pause();
-        mVideoView2.release();
+        mVideoView.pause();
+        mVideoView.stopPlayback();
         String path1 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Projecting/1.wmv";
         String path2 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Projecting/2.avi";
         String path3 = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Projecting/3.rmvb";
@@ -1062,9 +1042,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mList.add(path2);
         mList.add(path3);
         mList.add(path4);
-//        mVideoView.setVideoPath(mList.get(index));
-        mVideoView2.setUp(mList.get(index), null);
-        mVideoView2.start();
+        mVideoView.setVideoPath(mList.get(index));
         Toast.makeText(mContext, "播放" + mList.get(index), Toast.LENGTH_SHORT).show();
         mTextTv.setText("当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放");
         mTextTv.init(getWindowManager());
@@ -1195,11 +1173,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      */
     private Bitmap getScreenshot() {
         if (mStatus == Status.VIDEO) {
-//            return mVideoView.getTextureView().getBitmap();
-            return mVideoView2.getTextViewBitmap();
+            return mVideoView.getTextureView().getBitmap();
         } else if (mStatus == Status.VIDEO_TEXT) {
-//            Bitmap videoBitmap = mVideoView.getTextureView().getBitmap();
-            Bitmap videoBitmap = mVideoView2.getTextViewBitmap();
+            Bitmap videoBitmap = mVideoView.getTextureView().getBitmap();
             return compositeBitmap2(videoBitmap, mTextTv);
         } else {
             WindowManager windowManager = getWindowManager();
@@ -1366,13 +1342,45 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     }
 
-    private String TAG = "Player";
+    private PLMediaPlayer.OnInfoListener mOnInfoListener = new PLMediaPlayer.OnInfoListener() {
+        @Override
+        public boolean onInfo(PLMediaPlayer plMediaPlayer, int what, int extra) {
+            Log.i(TAG, "OnInfo, what = " + what + ", extra = " + extra);
+            switch (what) {
+                case PLMediaPlayer.MEDIA_INFO_BUFFERING_START:
+                    break;
+                case PLMediaPlayer.MEDIA_INFO_BUFFERING_END:
+                    break;
+                case PLMediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
+                    Log.i(TAG, "First video render time: " + extra + "ms");
+                    break;
+                case PLMediaPlayer.MEDIA_INFO_AUDIO_RENDERING_START:
+                    Log.i(TAG, "First audio render time: " + extra + "ms");
+                    break;
+                case PLMediaPlayer.MEDIA_INFO_VIDEO_FRAME_RENDERING:
+                    Log.i(TAG, "video frame rendering, ts = " + extra);
+                    break;
+                case PLMediaPlayer.MEDIA_INFO_AUDIO_FRAME_RENDERING:
+                    Log.i(TAG, "audio frame rendering, ts = " + extra);
+                    break;
+                case PLMediaPlayer.MEDIA_INFO_VIDEO_GOP_TIME:
+                    Log.i(TAG, "Gop Time: " + extra);
+                    break;
+                case PLMediaPlayer.MEDIA_INFO_SWITCHING_SW_DECODE:
+                    Log.i(TAG, "Hardware decoding failure, switching software decoding!");
+                    break;
+                default:
+                    break;
+            }
+            return true;
+        }
+    };
 
+    private String TAG = "Player";
 
     @Override
     protected void onDestroy() {
-//        mVideoView.stopPlayback();
-        mVideoView2.releasePlayer();
+        mVideoView.stopPlayback();
         SQLiteStudioService.instance().stop();
         unregisterReceiver(mAlarmReceiver);
         JMessageClient.unRegisterEventReceiver(this);
@@ -1456,8 +1464,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 //                if (mPicturePager.getTag().equals(task.getId())) {
 //                    return;
 //                }
-//                mVideoView.pause();
-                mVideoView2.pause();
+                mVideoView.pause();
                 mPicturePager.stop();
                 playPicture(task);
                 break;
@@ -1467,11 +1474,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     mPicturePager.stop();
                 } else if (mStatus == Status.PICTURE) {
                     mStatus = Status.PICTURE_TEXT;
-//                    mVideoView.pause();
-                    mVideoView2.pause();
+                    mVideoView.pause();
                 } else if (mStatus == Status.IDLE) {
-//                    mVideoView.pause();
-                    mVideoView2.pause();
+                    mVideoView.pause();
                     mPicturePager.stop();
                     mStatus = Status.IDLE_TEXT;
                 }
@@ -1501,11 +1506,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     mPicturePager.stop();
                 } else if (mStatus == Status.PICTURE) {
                     mStatus = Status.PICTURE_TEXT;
-//                    mVideoView.pause();
-                    mVideoView2.pause();
+                    mVideoView.pause();
                 } else if (mStatus == Status.IDLE) {
-//                    mVideoView.pause();
-                    mVideoView2.pause();
+                    mVideoView.pause();
                     mPicturePager.stop();
                     mStatus = Status.IDLE_TEXT;
                 }
@@ -1561,17 +1564,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         DBUtils.getInstance().deleteTask(task);
         switch (mStatus) {
             case VIDEO:
-                if (mVideoView2.getTag().equals(task.getId())) {
-//                    mVideoView.pause();
-                    mVideoView2.pause();
+                if (mVideoView.getTag().equals(task.getId())) {
+                    mVideoView.pause();
                     mStatus = Status.IDLE;
                 }
                 break;
             case VIDEO_TEXT:
                 if (task.getType() == AppConstant.TASK_TYPE_VIDEO) {
-                    if (mVideoView2.getTag().equals(task.getId())) {
-//                    mVideoView.pause();
-                        mVideoView2.pause();
+                    if (mVideoView.getTag().equals(task.getId())) {
+                        mVideoView.pause();
                         mStatus = Status.IDLE_TEXT;
                     }
                 } else if (task.getType() == AppConstant.TASK_TYPE_TEXT ||
@@ -1723,14 +1724,49 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     @Override
     protected void onStop() {
         super.onStop();
-        NiceVideoPlayerManager.instance().releaseNiceVideoPlayer();
     }
 
-    @Override
-    public void onBackPressed() {
-        if (NiceVideoPlayerManager.instance().onBackPressd()) {
-            return;
+
+    private PLMediaPlayer.OnErrorListener mOnErrorListener = new PLMediaPlayer.OnErrorListener() {
+        @Override
+        public boolean onError(PLMediaPlayer mp, int errorCode) {
+            Log.e(TAG, "Error happened, errorCode = " + errorCode);
+            switch (errorCode) {
+                case PLMediaPlayer.ERROR_CODE_IO_ERROR:
+                    Toast.makeText(mContext, "IO Error !", Toast.LENGTH_SHORT).show();
+                    return false;
+                default:
+                    break;
+            }
+            return true;
         }
-        super.onBackPressed();
-    }
+    };
+
+
+    private PLMediaPlayer.OnCompletionListener mOnCompletionListener = new PLMediaPlayer.OnCompletionListener() {
+        @Override
+        public void onCompletion(PLMediaPlayer plMediaPlayer) {
+            Log.i(TAG, "Play Completed !");
+            Toast.makeText(mContext, "本次视频播放完成!", Toast.LENGTH_SHORT).show();
+            int taskId = mTaskIds.get(AppConstant.TASK_TYPE_VIDEO);
+            Task task = DBUtils.getInstance().findTask(taskId);
+            playVideo(task);
+        }
+    };
+
+
+    private PLMediaPlayer.OnBufferingUpdateListener mOnBufferingUpdateListener = new PLMediaPlayer.OnBufferingUpdateListener() {
+        @Override
+        public void onBufferingUpdate(PLMediaPlayer plMediaPlayer, int precent) {
+            Log.i(TAG, "onBufferingUpdate: " + precent);
+        }
+    };
+
+    private PLMediaPlayer.OnVideoSizeChangedListener mOnVideoSizeChangedListener = new PLMediaPlayer.OnVideoSizeChangedListener() {
+        @Override
+        public void onVideoSizeChanged(PLMediaPlayer plMediaPlayer, int i, int i1, int i2, int i3) {
+            Log.i(TAG, "onVideoSizeChanged: width = " + i + ", height = " + i1 + "I2" + i2 + "I3" + i3);
+        }
+    };
+
 }

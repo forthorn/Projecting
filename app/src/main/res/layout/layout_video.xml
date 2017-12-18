@@ -6,15 +6,15 @@
              android:background="@android:color/black"
              android:orientation="vertical">
 
-    <!--<com.pili.pldroid.player.widget.PLVideoTextureView-->
-        <!--android:id="@+id/video_view"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent"-->
-        <!--android:layout_gravity="center"/>-->
-
-    <com.xiao.nicevideoplayer.NiceVideoPlayer
-        android:id="@+id/video_view2"
+    <com.pili.pldroid.player.widget.PLVideoTextureView
+        android:id="@+id/video_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:layout_gravity="center"/>
+
+    <!--<com.xiao.nicevideoplayer.NiceVideoPlayer-->
+        <!--android:id="@+id/video_view2"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"/>-->
 
 </FrameLayout>
