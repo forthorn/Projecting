@@ -387,7 +387,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initData() {
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
         mUuid = uuidFactory.getDeviceUuid().toString();
-        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
+//        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
