@@ -10,6 +10,7 @@ import com.forthorn.projecting.app.AppConstant;
 import com.forthorn.projecting.db.DBUtils;
 import com.forthorn.projecting.entity.Download;
 import com.forthorn.projecting.entity.Task;
+import com.forthorn.projecting.util.LogUtils;
 import com.forthorn.projecting.util.MD5Util;
 import com.liulishuo.filedownloader.BaseDownloadTask;
 import com.liulishuo.filedownloader.FileDownloadSampleListener;
@@ -47,7 +48,7 @@ public class Downloader {
     public void download(Task task) {
         long time = task.getStart_time() * 1000L - System.currentTimeMillis();
         if (time < 5 * 60 * 1000L) {
-            Log.e("CancelD", "播放时间距离现在小于5分钟，不进行下载");
+            LogUtils.e("CancelD", "播放时间距离现在小于5分钟，不进行下载");
             return;
         }
         String dir = checkDiskSpaceAndDir();
@@ -79,7 +80,7 @@ public class Downloader {
                         download.setFileSize(task.getSmallFileTotalBytes());
                         download.setStatus(AppConstant.DOWNLOAD_STATUS_COMPLETE);
                         DBUtils.getInstance().updateDownload(download);
-                        Log.e("下载完成：", download.toString());
+                        LogUtils.e("下载完成：", download.toString());
                     }
 
                     @Override
@@ -92,10 +93,10 @@ public class Downloader {
                         }
                         download.setStatus(AppConstant.DOWNLOAD_STATUS_DOWNLOADING);
                         DBUtils.getInstance().updateDownload(download);
-                        Log.e("下载开始：", download.toString());
+                        LogUtils.e("下载开始：", download.toString());
                     }
                 }).start();
-        Log.e("Downloader", "start");
+        LogUtils.e("Downloader", "start");
     }
 
 
@@ -170,7 +171,7 @@ public class Downloader {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.e("当前缓存大小：", size / 1024 / 1024 + "M");
+        LogUtils.e("当前缓存大小：", size / 1024 / 1024 + "M");
         return size / 1024L / 1024L;
     }
 }
