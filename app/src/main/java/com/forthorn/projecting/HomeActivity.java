@@ -49,6 +49,7 @@ import com.forthorn.projecting.func.picture.PictureAdapter;
 import com.forthorn.projecting.receiver.AlarmReceiver;
 import com.forthorn.projecting.receiver.DeviceReceiver;
 import com.forthorn.projecting.util.GsonUtils;
+import com.forthorn.projecting.util.LogUtils;
 import com.forthorn.projecting.util.SPUtils;
 import com.forthorn.projecting.widget.AutoScrollTextView;
 import com.forthorn.projecting.widget.NoticeDialog;
@@ -224,8 +225,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             nextTime = nextTime + 3600000L;
             requestTasks(nextHourTimeStamp);
         }
-        Log.e("Alarm", "下一个请求将在：" + sdf.format(new Date(nextTime)));
-        Log.e("Alarm", (nextTime - System.currentTimeMillis()) / 1000 + "秒后请求");
+        LogUtils.e("Alarm", "下一个请求将在：" + sdf.format(new Date(nextTime)));
+        LogUtils.e("Alarm", (nextTime - System.currentTimeMillis()) / 1000 + "秒后请求");
         mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE, nextTime - System.currentTimeMillis());
     }
 
@@ -234,7 +235,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         @Override
         public void handleMessage(android.os.Message msg) {
             super.handleMessage(msg);
-            Log.e("handlerMsg", "what:" + msg.what + "__arg1:" + msg.arg1);
+            LogUtils.e("handlerMsg", "what:" + msg.what + "__arg1:" + msg.arg1);
             switch (msg.what) {
                 case HANDLER_MESSAGE_TIMING_LOGIN:
                     //Toast.makeText(mContext, "每十分钟登录一次", //Toast.LENGTH_SHORT).show();
@@ -254,18 +255,18 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             if (msg.what != HANDLER_MESSAGE_TIMING_LOGIN && msg.what != HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT
                     && msg.what != HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE) {
                 int taskId = msg.what;
-                Log.e("任务消息", "taskID=" + taskId);
+                LogUtils.e("任务消息", "taskID=" + taskId);
                 int type = msg.arg1;
                 if (type == 0) {
                     return;
                 }
                 switch (type) {
                     case HANDLER_MESSAGE_START_ALARM:
-                        Log.e("任务消息", "task类型=执行任务");
+                        LogUtils.e("任务消息", "task类型=执行任务");
                         executeTask(taskId);
                         break;
                     case HANDLER_MESSAGE_FINISH_ALARM:
-                        Log.e("任务消息", "task类型=结束任务");
+                        LogUtils.e("任务消息", "task类型=结束任务");
                         finishTask(taskId);
                         break;
                 }
@@ -281,20 +282,20 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             return;
         }
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm");
-        Log.e("request", "请求：" + sdf.format(new Date(timeStamp * 1000L)) + "的任务");
+        LogUtils.e("request", "请求：" + sdf.format(new Date(timeStamp * 1000L)) + "的任务");
         //Toast.makeText(mContext, "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务", //Toast.LENGTH_SHORT).show();
         Call<TaskRes> taskResCall = Api.getDefault(HostType.VOM_HOST).getTaskList(Api.getCacheControl(),
                 String.valueOf(mDeviceId), String.valueOf(timeStamp));
         taskResCall.enqueue(new Callback<TaskRes>() {
             @Override
             public void onResponse(Call<TaskRes> call, Response<TaskRes> response) {
-                Log.e("查询任务", "结果：" + response.toString());
+                LogUtils.e("查询任务", "结果：" + response.toString());
                 TaskRes taskRes = response.body();
                 if (taskRes == null) {
                     //Toast.makeText(mContext, "查询失败：空", //Toast.LENGTH_SHORT).show();
                     return;
                 }
-                Log.e("查询任务", "结果：" + taskRes.toString());
+                LogUtils.e("查询任务", "结果：" + taskRes.toString());
                 if (taskRes.getData() == null || taskRes.getData().isEmpty()) {
                     //Toast.makeText(mContext, "查询：当前任务数为：0", //Toast.LENGTH_SHORT).show();
                     return;
@@ -307,7 +308,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
             @Override
             public void onFailure(Call<TaskRes> call, Throwable t) {
-                Log.e("查询任务", "结果：" + t.getMessage());
+                LogUtils.e("查询任务", "结果：" + t.getMessage());
             }
         });
     }
@@ -320,9 +321,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             for (Task task : list) {
                 executeTask(task.getId());
             }
-            Log.e("queryTask", list.toArray().toString());
+            LogUtils.e("queryTask", list.toArray().toString());
         } else {
-            Log.e("queryTask", "查询目前任务列表为空");
+            LogUtils.e("queryTask", "查询目前任务列表为空");
         }
     }
 
@@ -528,7 +529,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     public void onEventMainThread(LoginStateChangeEvent event) {
         LoginStateChangeEvent.Reason reason = event.getReason();//获取变更的原因
         UserInfo myInfo = event.getMyInfo();//获取当前被登出账号的信息
-        Log.e("LoginState", reason.name());
+        LogUtils.e("LoginState", reason.name());
         switch (reason) {
             case user_password_change:
 //                logout();
@@ -561,11 +562,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 case custom:
 //                    CustomContent customContent = (CustomContent) message.getContent();
 //                    Task task = GsonUtils.convertObj(customContent.toJson(), Task.class);
-//                    Log.e("CustomContent", customContent.toJson());
+//                    LogUtils.e("CustomContent", customContent.toJson());
 //                    if (task == null) {
 //                        return;
 //                    }
-//                    Log.e("offMsg", task.toString());
+//                    LogUtils.e("offMsg", task.toString());
 //                    handlerOfflineMessageEvent(task);
                     break;
                 case eventNotification:
@@ -609,9 +610,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             for (Task task2 : list) {
                 executeTask(task2.getId());
             }
-            Log.e("queryTask", list.toArray().toString());
+            LogUtils.e("queryTask", list.toArray().toString());
         } else {
-            Log.e("queryTask", "查询目前任务列表为空");
+            LogUtils.e("queryTask", "查询目前任务列表为空");
         }
     }
 
@@ -637,12 +638,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             case custom:
                 CustomContent customContent = (CustomContent) msg.getContent();
                 Task task = GsonUtils.convertObj(customContent.toJson(), Task.class);
-                Log.e("CustomContent", customContent.toJson());
+                LogUtils.e("CustomContent", customContent.toJson());
                 if (task == null) {
                     //Toast.makeText(mContext, "消息格式错误", //Toast.LENGTH_SHORT).show();
                     return;
                 }
-                Log.e("taskMessage", task.toString());
+                LogUtils.e("taskMessage", task.toString());
                 handMessageEvent(task);
                 break;
             case eventNotification:
@@ -694,7 +695,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
 
     private void handleTask(Task task) {
-        Log.e("handleTask", "开始处理任务");
+        LogUtils.e("handleTask", "开始处理任务");
         if (task.getFinish_time() < System.currentTimeMillis() / 1000L) {
             //Toast.makeText(mContext, "查询到任务id为" + task.getId() + "的任务已过期，自动跳过", //Toast.LENGTH_SHORT).show();
             return;
@@ -702,17 +703,17 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         int status = task.getStatus();
         switch (status) {
             case AppConstant.TASK_STATUS_ADD:
-                Log.e("handleTask", "insertTask");
+                LogUtils.e("handleTask", "insertTask");
                 DBUtils.getInstance().insertTask(task);
                 addAlarmTask(task);
                 break;
             case AppConstant.TASK_STATUS_DELETE:
-                Log.e("handleTask", "deleteTask");
+                LogUtils.e("handleTask", "deleteTask");
                 DBUtils.getInstance().deleteTask(task);
                 deleteAlarmTask(task);
                 break;
             case AppConstant.TASK_STATUS_UPDATE:
-                Log.e("handleTask", "updateTask");
+                LogUtils.e("handleTask", "updateTask");
                 DBUtils.getInstance().updateTask(task);
                 updateAlarmTask(task);
                 break;
@@ -745,7 +746,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         message.arg1 = HANDLER_MESSAGE_FINISH_ALARM;
         long time = task.getFinish_time() * 1000L - 200L - System.currentTimeMillis();
         mHandler.sendMessageDelayed(message, time);
-        Log.e("addFinishAlarmTask", "Task时间：" + task.getFinish_time() * 1000L);
+        LogUtils.e("addFinishAlarmTask", "Task时间：" + task.getFinish_time() * 1000L);
     }
 
     /**
@@ -765,9 +766,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         if (time < 0) {
             time = 100L;
         }
-        Log.e("addAlarmTask", "DelayTime:" + time + "___ID:" + task.getId());
+        LogUtils.e("addAlarmTask", "DelayTime:" + time + "___ID:" + task.getId());
         mHandler.sendMessageDelayed(message, time);
-        Log.e("addAlarmTask", "Task时间：" + task.getStart_time() * 1000L);
+        LogUtils.e("addAlarmTask", "Task时间：" + task.getStart_time() * 1000L);
     }
 
 
@@ -821,12 +822,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         sleepCall.enqueue(new Callback<BaseResponse>() {
             @Override
             public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
-                Log.e("sleep", response.body().getMsg() == null ? "休眠上报成功" : response.body().getMsg());
+                LogUtils.e("sleep", response.body().getMsg() == null ? "休眠上报成功" : response.body().getMsg());
             }
 
             @Override
             public void onFailure(Call<BaseResponse> call, Throwable t) {
-                Log.e("sleep", t.getMessage() == null ? "休眠上报失败" : t.getMessage());
+                LogUtils.e("sleep", t.getMessage() == null ? "休眠上报失败" : t.getMessage());
             }
         });
         pauseTask();
@@ -867,12 +868,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         wakeupCall.enqueue(new Callback<BaseResponse>() {
             @Override
             public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
-                Log.e("wakeUp", response.body().getMsg() == null ? "唤醒上报成功" : response.body().getMsg());
+                LogUtils.e("wakeUp", response.body().getMsg() == null ? "唤醒上报成功" : response.body().getMsg());
             }
 
             @Override
             public void onFailure(Call<BaseResponse> call, Throwable t) {
-                Log.e("wakeUp", t.getMessage() == null ? "唤醒上报失败" : t.getMessage());
+                LogUtils.e("wakeUp", t.getMessage() == null ? "唤醒上报失败" : t.getMessage());
             }
         });
         resumeTask();
@@ -899,7 +900,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             public void onAudioFocusChange(int i) {
             }
         });
-        Log.e("Volume", "Task:" + volume + "__Current:" + current + "__Target:" + targetVolume);
+        LogUtils.e("Volume", "Task:" + volume + "__Current:" + current + "__Target:" + targetVolume);
         updateStatus();
         Call<BaseResponse> volumeCall = Api.getDefault(HostType.VOM_HOST).setVolume(Api.getCacheControl(),
                 String.valueOf(mDeviceId), mDeviceCode, String.valueOf(volume));
@@ -907,12 +908,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             @Override
             public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
                 BaseResponse baseResponse = response.body();
-                Log.e("adjustVolume", baseResponse.getMsg() == null ? "调节音量成功" : baseResponse.getMsg());
+                LogUtils.e("adjustVolume", baseResponse.getMsg() == null ? "调节音量成功" : baseResponse.getMsg());
             }
 
             @Override
             public void onFailure(Call<BaseResponse> call, Throwable t) {
-                Log.e("adjustVolume", t.getMessage() == null ? "调节音量失败" : t.getMessage());
+                LogUtils.e("adjustVolume", t.getMessage() == null ? "调节音量失败" : t.getMessage());
             }
         });
     }
@@ -932,7 +933,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         task.setDuration(60);
 //        task.setContent("http://p1.wmpic.me/article/2015/04/10/1428655515_xYwBQLzs.jpg");
         task.setContent("http://p2.wmpic.me/article/2015/04/10/1428655516_cTGyxgAF.jpg");
-        Log.e("mockPicture", task.toString());
+        LogUtils.e("mockPicture", task.toString());
         //Toast.makeText(mContext, "模拟图片任务：" + task.toString(), //Toast.LENGTH_SHORT).show();
         handleTask(task);
     }
@@ -953,7 +954,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         task.setContent("2017年11月05日发布下午天气预报 全省天气:今天晚上到明天赣州、萍乡两市和吉安市西部多云转阴，全省其他地区晴天转多云。风向：偏北，风力：2～3级。");
 //        task.setContent("http://p2.wmpic.me/article/2015/04/10/1428655516_cTGyxgAF.jpg");
 //        task.setContent("http://p1.wmpic.me/article/2015/04/10/1428655515_DCkMDAGY.jpg");
-        Log.e("mockText", task.toString());
+        LogUtils.e("mockText", task.toString());
         //Toast.makeText(mContext, "模拟文字任务：" + task.toString(), //Toast.LENGTH_SHORT).show();
         handleTask(task);
     }
@@ -972,7 +973,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         task.setFinish_time((int) ((System.currentTimeMillis() + 10000L + 60000L) / 1000L));
         task.setDuration(180);
         task.setContent("http://vf2.mtime.cn/Video/2017/03/31/mp4/170331093811717750.mp4");
-        Log.e("mockVideo", task.toString());
+        LogUtils.e("mockVideo", task.toString());
         //Toast.makeText(mContext, "模拟视频任务：" + task.toString(), //Toast.LENGTH_SHORT).show();
         Downloader.getInstance().download(task);
         handleTask(task);
@@ -1047,7 +1048,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mTextTv.setText("当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放");
         mTextTv.init(getWindowManager());
         mTextTv.startScroll();
-        Log.e("status", mStatus.getCode() + "" + mStatus.name());
+        LogUtils.e("status", mStatus.getCode() + "" + mStatus.name());
         mTextTv.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -1078,11 +1079,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         MultipartBody.Part snapshotPt = MultipartBody.Part.createFormData("attachment", mSnapFileName, snapshotRB);
         Call<BaseResponse> uploadCall = Api.getDefault(HostType.VOM_HOST).uploadSnapshoot(Api.getCacheControl(),
                 timeRB, mDeviceIdRB, snapshotPt);
-        Log.e("snapshot", mSnapFilePath);
+        LogUtils.e("snapshot", mSnapFilePath);
         uploadCall.enqueue(new Callback<BaseResponse>() {
             @Override
             public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
-                Log.e("snapshot", response.body().getMsg() == null ? "上传成功" : response.body().getMsg());
+                LogUtils.e("snapshot", response.body().getMsg() == null ? "上传成功" : response.body().getMsg());
                 try {
                     File file = new File(mSnapFilePath);
                     if (file.exists()) {
@@ -1103,7 +1104,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 } catch (Exception e) {
 
                 }
-                Log.e("snapshot", t.getMessage() == null ? "上传截图失败" : t.getMessage());
+                LogUtils.e("snapshot", t.getMessage() == null ? "上传截图失败" : t.getMessage());
             }
         });
     }
@@ -1215,7 +1216,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             mTextTv.setDrawingCacheEnabled(false);
             if (bitmap != null) {
                 //Toast.makeText(mContext, "方案一成功", //Toast.LENGTH_SHORT).show();
-                Log.e("Bitmap", "方案一成功");
+                LogUtils.e("Bitmap", "方案一成功");
             }
         }
 //        if (bitmap == null) {
@@ -1224,7 +1225,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 //            mTextTv.requestFocus();
 //            if (bitmap != null) {
 //                //Toast.makeText(mContext, "方案二失败", //Toast.LENGTH_SHORT).show();
-//                Log.e("Bitmap", "方案二失败");
+//                LogUtils.e("Bitmap", "方案二失败");
 //            }
 //        }
         if (bitmap == null) {
@@ -1234,14 +1235,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             mTextLl.setDrawingCacheEnabled(false);
             if (bitmap != null) {
                 //Toast.makeText(mContext, "方案三成功", //Toast.LENGTH_SHORT).show();
-                Log.e("Bitmap", "方案三成功");
+                LogUtils.e("Bitmap", "方案三成功");
             }
         }
         if (bitmap == null) {
             bitmap = loadBitmapFromView(mTextLl);
             if (bitmap != null) {
                 //Toast.makeText(mContext, "方案四成功", //Toast.LENGTH_SHORT).show();
-                Log.e("Bitmap", "方案四成功");
+                LogUtils.e("Bitmap", "方案四成功");
             }
         }
 //        float top = mTextLl.getTop();
@@ -1283,7 +1284,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             mTextTv.setDrawingCacheEnabled(false);
             if (bitmap != null) {
                 //Toast.makeText(mContext, "方案一成功", //Toast.LENGTH_SHORT).show();
-                Log.e("Bitmap", "方案一成功");
+                LogUtils.e("Bitmap", "方案一成功");
             }
         }
         if (bitmap == null) {
@@ -1293,14 +1294,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             mTextLl.setDrawingCacheEnabled(false);
             if (bitmap != null) {
                 //Toast.makeText(mContext, "方案三成功", //Toast.LENGTH_SHORT).show();
-                Log.e("Bitmap", "方案三成功");
+                LogUtils.e("Bitmap", "方案三成功");
             }
         }
         if (bitmap == null) {
             bitmap = loadBitmapFromView(mTextLl);
             if (bitmap != null) {
                 //Toast.makeText(mContext, "方案四成功", //Toast.LENGTH_SHORT).show();
-                Log.e("Bitmap", "方案四成功");
+                LogUtils.e("Bitmap", "方案四成功");
             }
         }
 //        float top = mTextLl.getTop();
@@ -1345,29 +1346,29 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private PLMediaPlayer.OnInfoListener mOnInfoListener = new PLMediaPlayer.OnInfoListener() {
         @Override
         public boolean onInfo(PLMediaPlayer plMediaPlayer, int what, int extra) {
-            Log.i(TAG, "OnInfo, what = " + what + ", extra = " + extra);
+            LogUtils.i(TAG, "OnInfo, what = " + what + ", extra = " + extra);
             switch (what) {
                 case PLMediaPlayer.MEDIA_INFO_BUFFERING_START:
                     break;
                 case PLMediaPlayer.MEDIA_INFO_BUFFERING_END:
                     break;
                 case PLMediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
-                    Log.i(TAG, "First video render time: " + extra + "ms");
+                    LogUtils.i(TAG, "First video render time: " + extra + "ms");
                     break;
                 case PLMediaPlayer.MEDIA_INFO_AUDIO_RENDERING_START:
-                    Log.i(TAG, "First audio render time: " + extra + "ms");
+                    LogUtils.i(TAG, "First audio render time: " + extra + "ms");
                     break;
                 case PLMediaPlayer.MEDIA_INFO_VIDEO_FRAME_RENDERING:
-                    Log.i(TAG, "video frame rendering, ts = " + extra);
+                    LogUtils.i(TAG, "video frame rendering, ts = " + extra);
                     break;
                 case PLMediaPlayer.MEDIA_INFO_AUDIO_FRAME_RENDERING:
-                    Log.i(TAG, "audio frame rendering, ts = " + extra);
+                    LogUtils.i(TAG, "audio frame rendering, ts = " + extra);
                     break;
                 case PLMediaPlayer.MEDIA_INFO_VIDEO_GOP_TIME:
-                    Log.i(TAG, "Gop Time: " + extra);
+                    LogUtils.i(TAG, "Gop Time: " + extra);
                     break;
                 case PLMediaPlayer.MEDIA_INFO_SWITCHING_SW_DECODE:
-                    Log.i(TAG, "Hardware decoding failure, switching software decoding!");
+                    LogUtils.i(TAG, "Hardware decoding failure, switching software decoding!");
                     break;
                 default:
                     break;
@@ -1436,19 +1437,19 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     @Override
     public void executeTask(int taskId) {
-        Log.e("executeTask", "taskId=" + taskId);
+        LogUtils.e("executeTask", "taskId=" + taskId);
         Task task = DBUtils.getInstance().findTask(taskId);
         if (task == null) {
-            Log.e("executeTask", "task = null");
+            LogUtils.e("executeTask", "task = null");
             return;
         }
         if (Integer.valueOf(taskId).equals((Integer) mTaskIds.get(task.getType()))) {
-            Log.e("执行中", "当前已存在执行中的任务:" + taskId);
+            LogUtils.e("执行中", "当前已存在执行中的任务:" + taskId);
             return;
         } else {
             mTaskIds.put(task.getType(), taskId);
         }
-        Log.e("executeTask", task.toString());
+        LogUtils.e("executeTask", task.toString());
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
         //Toast.makeText(mContext, "执行：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), //Toast.LENGTH_SHORT).show();
         switch (task.getType()) {
@@ -1546,14 +1547,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      */
     @Override
     public void finishTask(int taskId) {
-        Log.e("finishTask", "taskId=" + taskId);
+        LogUtils.e("finishTask", "taskId=" + taskId);
         Task task = DBUtils.getInstance().findTask(taskId);
         if (task == null) {
             return;
         }
         try {
             mTaskIds.remove(task.getType());
-            Log.e("移除任务", "Map移除任务,Size:" + mTaskIds.size());
+            LogUtils.e("移除任务", "Map移除任务,Size:" + mTaskIds.size());
         } catch (Exception e) {
         }
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
@@ -1730,7 +1731,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private PLMediaPlayer.OnErrorListener mOnErrorListener = new PLMediaPlayer.OnErrorListener() {
         @Override
         public boolean onError(PLMediaPlayer mp, int errorCode) {
-            Log.e(TAG, "Error happened, errorCode = " + errorCode);
+            LogUtils.e(TAG, "Error happened, errorCode = " + errorCode);
             switch (errorCode) {
                 case PLMediaPlayer.ERROR_CODE_IO_ERROR:
                     Toast.makeText(mContext, "IO Error !", Toast.LENGTH_SHORT).show();
@@ -1746,7 +1747,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private PLMediaPlayer.OnCompletionListener mOnCompletionListener = new PLMediaPlayer.OnCompletionListener() {
         @Override
         public void onCompletion(PLMediaPlayer plMediaPlayer) {
-            Log.i(TAG, "Play Completed !");
+            LogUtils.i(TAG, "Play Completed !");
             Toast.makeText(mContext, "本次视频播放完成!", Toast.LENGTH_SHORT).show();
             int taskId = mTaskIds.get(AppConstant.TASK_TYPE_VIDEO);
             Task task = DBUtils.getInstance().findTask(taskId);
@@ -1758,14 +1759,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private PLMediaPlayer.OnBufferingUpdateListener mOnBufferingUpdateListener = new PLMediaPlayer.OnBufferingUpdateListener() {
         @Override
         public void onBufferingUpdate(PLMediaPlayer plMediaPlayer, int precent) {
-            Log.i(TAG, "onBufferingUpdate: " + precent);
+            LogUtils.i(TAG, "onBufferingUpdate: " + precent);
         }
     };
 
     private PLMediaPlayer.OnVideoSizeChangedListener mOnVideoSizeChangedListener = new PLMediaPlayer.OnVideoSizeChangedListener() {
         @Override
         public void onVideoSizeChanged(PLMediaPlayer plMediaPlayer, int i, int i1, int i2, int i3) {
-            Log.i(TAG, "onVideoSizeChanged: width = " + i + ", height = " + i1 + "I2" + i2 + "I3" + i3);
+            LogUtils.i(TAG, "onVideoSizeChanged: width = " + i + ", height = " + i1 + "I2" + i2 + "I3" + i3);
         }
     };
 

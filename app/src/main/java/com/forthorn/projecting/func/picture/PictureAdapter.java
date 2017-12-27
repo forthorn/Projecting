@@ -21,7 +21,7 @@ public class PictureAdapter extends BaseViewPagerAdapter<String> {
 
     private Context mContext;
     private RequestOptions options = new RequestOptions()
-            .diskCacheStrategy(DiskCacheStrategy.DATA);
+            .diskCacheStrategy(DiskCacheStrategy.RESOURCE);
 
     public PictureAdapter(Context context, List data) {
         super(context, data);

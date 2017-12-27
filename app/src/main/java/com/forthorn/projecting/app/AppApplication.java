@@ -6,6 +6,7 @@ import android.support.v4.BuildConfig;
 
 import com.forthorn.projecting.HomeActivity;
 import com.forthorn.projecting.R;
+import com.forthorn.projecting.util.LogUtils;
 import com.liulishuo.filedownloader.FileDownloader;
 import com.tencent.bugly.Bugly;
 import com.tencent.bugly.beta.Beta;
@@ -31,6 +32,7 @@ public class AppApplication extends Application {
         JMessageClient.setNotificationFlag(JMessageClient.FLAG_NOTIFY_WITH_LED | JMessageClient.FLAG_NOTIFY_WITH_VIBRATE);
         FileDownloader.setup(this);
         initBugly();
+        LogUtils.init(this);
     }
 
     public static AppApplication getApplication() {
