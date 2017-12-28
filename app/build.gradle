@@ -9,7 +9,7 @@ android {
         targetSdkVersion 20
         versionCode 29
         versionName "1.7.1"
-        //方案 2-4
+        //多格式方案
         ndk {
             //选择要添加的对应cpu类型的.so库。
             abiFilters 'armeabi', 'armeabi-v7a'
