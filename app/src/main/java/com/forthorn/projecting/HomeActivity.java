@@ -1044,7 +1044,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mList.add(path3);
         mList.add(path4);
         mVideoView.setVideoPath(mList.get(index));
-        Toast.makeText(mContext, "播放" + mList.get(index), Toast.LENGTH_SHORT).show();
+//        Toast.makeText(mContext, "播放" + mList.get(index), Toast.LENGTH_SHORT).show();
         mTextTv.setText("当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放当前正在播放");
         mTextTv.init(getWindowManager());
         mTextTv.startScroll();
@@ -1563,11 +1563,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         DBUtils.getInstance().updateTask(task);
         deleteAlarmTask(task);
         DBUtils.getInstance().deleteTask(task);
+        LogUtils.e("切换状态", "结束前状态" + mStatus.name());
         switch (mStatus) {
             case VIDEO:
                 if (mVideoView.getTag().equals(task.getId())) {
+                    LogUtils.e("切换状态", "VIDEO->IDLE");
                     mVideoView.pause();
                     mStatus = Status.IDLE;
+                } else {
+                    LogUtils.e("切换状态", "VIDEO-不成功");
                 }
                 break;
             case VIDEO_TEXT:
@@ -1620,6 +1624,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 mStatus = Status.IDLE;
                 break;
         }
+        LogUtils.e("切换状态", "结束后状态" + mStatus.name());
         mIdleFl.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -1734,7 +1739,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             LogUtils.e(TAG, "Error happened, errorCode = " + errorCode);
             switch (errorCode) {
                 case PLMediaPlayer.ERROR_CODE_IO_ERROR:
-                    Toast.makeText(mContext, "IO Error !", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(mContext, "IO Error !", Toast.LENGTH_SHORT).show();
                     return false;
                 default:
                     break;
@@ -1748,10 +1753,18 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         @Override
         public void onCompletion(PLMediaPlayer plMediaPlayer) {
             LogUtils.i(TAG, "Play Completed !");
-            Toast.makeText(mContext, "本次视频播放完成!", Toast.LENGTH_SHORT).show();
-            int taskId = mTaskIds.get(AppConstant.TASK_TYPE_VIDEO);
-            Task task = DBUtils.getInstance().findTask(taskId);
-            playVideo(task);
+//            Toast.makeText(mContext, "本次视频播放完成!", Toast.LENGTH_SHORT).show();
+            if (mTaskIds.get(AppConstant.TASK_TYPE_VIDEO) == null) {
+                LogUtils.e("onCompletion", "taskids get TASK_TYPE_VIDEO is null!");
+                return;
+            } else {
+                int taskId = mTaskIds.get(AppConstant.TASK_TYPE_VIDEO);
+                Task task = DBUtils.getInstance().findTask(taskId);
+                LogUtils.e("onCompletion", "taskids getTask id is " + taskId);
+                if (task != null)
+                    LogUtils.e("onCompletion", "task  is not null!");
+                playVideo(task);
+            }
         }
     };
 

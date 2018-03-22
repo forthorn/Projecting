@@ -76,7 +76,7 @@ public class LogUtils {
         if (!dir.exists()) {
             dir.mkdir();
         }
-        return  sdcardDir.getAbsolutePath();
+        return sdcardDir.getAbsolutePath();
     }
 
     private static final char VERBOSE = 'v';
@@ -94,18 +94,22 @@ public class LogUtils {
     }
 
     public static void d(String tag, String msg) {
+        Log.d(tag, msg);
         writeToFile(DEBUG, tag, msg);
     }
 
     public static void i(String tag, String msg) {
+        Log.i(tag, msg);
         writeToFile(INFO, tag, msg);
     }
 
     public static void w(String tag, String msg) {
+        Log.w(tag, msg);
         writeToFile(WARN, tag, msg);
     }
 
     public static void e(String tag, String msg) {
+        Log.e(tag, msg);
         writeToFile(ERROR, tag, msg);
     }
 

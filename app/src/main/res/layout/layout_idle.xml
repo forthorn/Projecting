@@ -205,7 +205,7 @@
 
             <TextView
                 android:id="@+id/idle_server_status_tv"
-                android:layout_width="wrap_content"
+                android:layout_width="98dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:drawableLeft="@drawable/server_status_selector"
