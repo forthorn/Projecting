@@ -65,11 +65,18 @@ public class LogUtils {
      * @return
      */
     private static String getFilePath(Context context) {
-        if (Environment.MEDIA_MOUNTED.equals(Environment.MEDIA_MOUNTED) || !Environment.isExternalStorageRemovable()) {//如果外部储存可用
-            return context.getExternalFilesDir(null).getPath();//获得外部存储路径,默认路径为 /storage/emulated/0/Android/data/com.waka.workspace.logtofile/files/Logs/log_2016-03-14_16-15-09.log
+        File sdcardDir = null;
+        boolean sdcardExist = Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED);
+        if (sdcardExist) {
+            sdcardDir = Environment.getExternalStorageDirectory();
         } else {
-            return context.getFilesDir().getPath();//直接存在/data/data里，非root手机是看不到的
+            sdcardDir = Environment.getDownloadCacheDirectory();
         }
+        File dir = new File(sdcardDir, "Projecting");
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        return  sdcardDir.getAbsolutePath();
     }
 
     private static final char VERBOSE = 'v';
