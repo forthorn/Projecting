@@ -25,7 +25,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.forthorn.projecting.api.Api;
@@ -1761,9 +1760,10 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 int taskId = mTaskIds.get(AppConstant.TASK_TYPE_VIDEO);
                 Task task = DBUtils.getInstance().findTask(taskId);
                 LogUtils.e("onCompletion", "taskids getTask id is " + taskId);
-                if (task != null)
+                if (task != null) {
                     LogUtils.e("onCompletion", "task  is not null!");
-                playVideo(task);
+                    playVideo(task);
+                }
             }
         }
     };

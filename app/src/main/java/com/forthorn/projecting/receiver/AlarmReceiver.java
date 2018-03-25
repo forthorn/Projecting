@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.util.Log;
 
 import com.forthorn.projecting.app.AppConstant;
-import com.forthorn.projecting.baserx.RxEvent;
 import com.forthorn.projecting.baserx.RxManager;
 
 /**

@@ -2,10 +2,8 @@ package com.forthorn.projecting.downloader;
 
 import android.os.Environment;
 import android.text.TextUtils;
-import android.util.Base64;
 import android.util.Log;
 
-import com.forthorn.projecting.app.AppApplication;
 import com.forthorn.projecting.app.AppConstant;
 import com.forthorn.projecting.db.DBUtils;
 import com.forthorn.projecting.entity.Download;

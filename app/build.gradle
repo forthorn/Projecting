@@ -56,9 +56,9 @@ android {
                     def fileName
                     if (outputFile != null && outputFile.name.endsWith('.apk')) {
                         if (variant.buildType.name.equals('release')) {
-                            fileName = "Projecting_v${defaultConfig.versionName}_${releaseTime()}.apk"
+                            fileName = "Projecting_v${defaultConfig.versionName}_${defaultConfig.versionCode}_${releaseTime()}.apk"
                         } else if (variant.buildType.name.equals('debug')) {
-                            fileName = "Projecting_v${defaultConfig.versionName}_debug.apk"
+                            fileName = "Projecting_v${defaultConfig.versionName}_${defaultConfig.versionCode}_debug.apk"
                         }
                         output.outputFile = new File(outputFile.parent, fileName)
                     }
@@ -76,9 +76,9 @@ android {
                     def fileName
                     if (outputFile != null && outputFile.name.endsWith('.apk')) {
                         if (variant.buildType.name.equals('release')) {
-                            fileName = "Projecting_v${defaultConfig.versionName}_${releaseTime()}.apk"
+                            fileName = "Projecting_v${defaultConfig.versionName}_${defaultConfig.versionCode}_${releaseTime()}.apk"
                         } else if (variant.buildType.name.equals('debug')) {
-                            fileName = "Projecting_v${defaultConfig.versionName}_debug.apk"
+                            fileName = "Projecting_v${defaultConfig.versionName}_${defaultConfig.versionCode}_debug.apk"
                         }
                         output.outputFile = new File(outputFile.parent, fileName)
                     }

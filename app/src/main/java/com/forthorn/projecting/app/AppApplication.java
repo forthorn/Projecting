@@ -2,8 +2,8 @@ package com.forthorn.projecting.app;
 
 import android.app.Application;
 import android.os.Environment;
-import android.support.v4.BuildConfig;
 
+import com.forthorn.projecting.BuildConfig;
 import com.forthorn.projecting.HomeActivity;
 import com.forthorn.projecting.R;
 import com.forthorn.projecting.util.LogUtils;

@@ -2,12 +2,8 @@ package com.forthorn.projecting.api;
 
 import com.forthorn.projecting.baserx.BaseResponse;
 import com.forthorn.projecting.entity.IMAccount;
-import com.forthorn.projecting.entity.TaskList;
 import com.forthorn.projecting.entity.TaskRes;
 import com.forthorn.projecting.entity.UserList;
-
-import java.io.File;
-import java.util.Map;
 
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -19,7 +15,6 @@ import retrofit2.http.Header;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.Part;
-import retrofit2.http.PartMap;
 import retrofit2.http.Query;
 import rx.Observable;
 
