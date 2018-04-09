@@ -1,6 +1,10 @@
 package com.forthorn.projecting.app;
 
+import android.app.AlarmManager;
 import android.app.Application;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Environment;
 
 import com.forthorn.projecting.BuildConfig;
@@ -19,7 +23,7 @@ import cn.jpush.im.android.api.JMessageClient;
  * Description:
  */
 
-public class AppApplication extends Application {
+public class AppApplication extends Application implements Thread.UncaughtExceptionHandler {
 
     private static AppApplication mAppApplication;
 
@@ -31,6 +35,7 @@ public class AppApplication extends Application {
         JMessageClient.setDebugMode(true);
         JMessageClient.setNotificationFlag(JMessageClient.FLAG_NOTIFY_WITH_LED | JMessageClient.FLAG_NOTIFY_WITH_VIBRATE);
         FileDownloader.setup(this);
+        Thread.setDefaultUncaughtExceptionHandler(this);
         initBugly();
         LogUtils.init(this);
     }
@@ -53,5 +58,21 @@ public class AppApplication extends Application {
         Beta.showInterruptedStrategy = true;
         Beta.canShowUpgradeActs.add(HomeActivity.class);
         Bugly.init(getApplicationContext(), "a153c22bee", BuildConfig.DEBUG);
+    }
+
+    public void restartApp() {
+        Intent intent = new Intent(mAppApplication, HomeActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent restartIntent = PendingIntent.getActivity(mAppApplication, 0, intent, 0);
+        AlarmManager alarmManager = (AlarmManager) mAppApplication.getSystemService(Context.ALARM_SERVICE);
+        alarmManager.set(AlarmManager.RTC, System.currentTimeMillis() + 200, restartIntent);
+        android.os.Process.killProcess(android.os.Process.myPid());  //结束进程之前可以把你程序的注销或者退出代码放在这段代码之前
+    }
+
+    @Override
+    public void uncaughtException(Thread t, Throwable e) {
+        if (null != e && null != t) {
+            restartApp();
+        }
     }
 }
