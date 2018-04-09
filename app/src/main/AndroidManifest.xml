@@ -27,27 +27,34 @@
             android:name="com.forthorn.projecting.SplashActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:screenOrientation="landscape">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
+            <!--<intent-filter>-->
+            <!--<action android:name="android.intent.action.MAIN"/>-->
+            <!--<category android:name="android.intent.category.LAUNCHER"/>-->
+            <!--</intent-filter>-->
         </activity>
         <activity
             android:name="com.forthorn.projecting.HomeActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/title_activity_home"
+            android:launchMode="singleTask"
             android:screenOrientation="landscape"
             android:theme="@style/FullscreenTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.HOME"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
         </activity>
         <activity
             android:name="com.forthorn.projecting.AboutActivity"
             android:screenOrientation="landscape"></activity>
 
         <receiver android:name="com.forthorn.projecting.receiver.BootReceiver">
-            <!--<intent-filter>-->
-            <!--<action android:name="android.intent.action.BOOT_COMPLETED"/>-->
-            <!--<category android:name="android.intent.category.LAUNCHER"/>-->
-            <!--</intent-filter>-->
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
         </receiver>
 
         <receiver android:name="com.forthorn.projecting.receiver.DeviceReceiver">
@@ -61,7 +68,5 @@
 
         <receiver android:name="com.forthorn.projecting.receiver.AlarmReceiver">
         </receiver>
-
     </application>
-
 </manifest>
