@@ -2,13 +2,17 @@ package com.xboot.stdcall;
 
 import java.util.Calendar;
 
+/**
+ *
+ */
 public class PowerUtils {
 
-    public void cancelPowerOnOff() {
+    public static boolean cancelPowerOnOff() {
         try {
-            setPowerOnOff((byte) 0, (byte) 5, (byte) 0, (byte) 5, (byte) 0);
+            return setPowerOnOff((byte) 0, (byte) 5, (byte) 0, (byte) 5, (byte) 0);
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
     }
 
@@ -25,9 +29,9 @@ public class PowerUtils {
 //    }
 
 
-    public void setPowerOnOff(long mTimeOff, long mTimeOn) {
+    public static boolean setPowerOnOff(long mTimeOff, long mTimeOn) {
         if (mTimeOn == -1 || mTimeOff == -1) {
-            return;
+            return false;
         }
         long nowTime = Calendar.getInstance().getTimeInMillis();
         // 关机
@@ -39,19 +43,22 @@ public class PowerUtils {
         second = (mTimeOn - mTimeOff) / 1000;
         byte sH = (byte) (second / 3600);
         byte sM = (byte) ((second / 60) % 60);
-        setPowerOnOff(sH, sM, eH, eM, (byte) 3);
+        return setPowerOnOff(sH, sM, eH, eM, (byte) 3);
     }
 
-    protected void setPowerOnOff(byte on_h, byte on_m, byte off_h, byte off_m,
-                                 byte enable) {
+    protected static boolean setPowerOnOff(byte on_h, byte on_m, byte off_h, byte off_m,
+                                           byte enable) {
         try {
             int fd = posix.open("/dev/McuCom", posix.O_RDWR, 0666);
             // 颠倒了
             posix.poweronoff(on_h, on_m, off_h, off_m, enable, fd);
             posix.close(fd);
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
     }
+
 
 }

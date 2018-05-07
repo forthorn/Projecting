@@ -3,8 +3,6 @@ package com.forthorn.projecting;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.KeyguardManager;
-import android.app.admin.DevicePolicyManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -41,12 +39,12 @@ import com.forthorn.projecting.downloader.Downloader;
 import com.forthorn.projecting.entity.Download;
 import com.forthorn.projecting.entity.Event;
 import com.forthorn.projecting.entity.IMAccount;
+import com.forthorn.projecting.entity.Schedule;
 import com.forthorn.projecting.entity.Task;
 import com.forthorn.projecting.entity.TaskRes;
 import com.forthorn.projecting.func.picture.AutoViewPager;
 import com.forthorn.projecting.func.picture.PictureAdapter;
 import com.forthorn.projecting.receiver.AlarmReceiver;
-import com.forthorn.projecting.receiver.DeviceReceiver;
 import com.forthorn.projecting.util.GsonUtils;
 import com.forthorn.projecting.util.LogUtils;
 import com.forthorn.projecting.util.SPUtils;
@@ -55,6 +53,7 @@ import com.forthorn.projecting.widget.NoticeDialog;
 import com.pili.pldroid.player.AVOptions;
 import com.pili.pldroid.player.PLMediaPlayer;
 import com.pili.pldroid.player.widget.PLVideoTextureView;
+import com.xboot.stdcall.PowerUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -122,8 +121,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private String mDeviceCode;
 
     private AudioManager mAudioManager;
-    private DevicePolicyManager mPolicyManager;
-    private ComponentName mComponentName;
     private AlarmManager mAlarmManager;
     private AlarmReceiver mAlarmReceiver;
 
@@ -132,8 +129,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private String mSnapFileName;
     private String mSnapFilePath;
 
-    private boolean mEnableLock;
-    private static final int REQUEST_CODE_ADMIN = 0x1;
     private static final int HANDLER_MESSAGE_TIMING_LOGIN = 0X2;
     private static final int HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT = 0X3;
     private static final int HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE = 0X4;
@@ -156,12 +151,35 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         initData();
         initEvent();
         initPlayer();
-        initManager();
+        checkOnOff();
         initIM();
         queryTask();
+        querySchedule();
         //每十分钟登录一下
         mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000);
         setRequestAlarm();
+    }
+
+    private void querySchedule() {
+        if (mDeviceId == 0) {
+            return;
+        }
+        Call<Schedule> scheduleCall = Api.getDefault(HostType.VOM_HOST).getOnOff(Api.getCacheControl(), mUuid);
+        scheduleCall.enqueue(new Callback<Schedule>() {
+            @Override
+            public void onResponse(Call<Schedule> call, Response<Schedule> response) {
+                Schedule schedule = response.body();
+                if (schedule == null || schedule.getData() == null) {
+                    return;
+                }
+                DBUtils.getInstance().updateSchedule(schedule.getData());
+                handleOnOff(schedule.getData());
+            }
+
+            @Override
+            public void onFailure(Call<Schedule> call, Throwable t) {
+            }
+        });
     }
 
     private void updateStatus() {
@@ -326,15 +344,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
     }
 
-    private void initManager() {
-        mPolicyManager = (DevicePolicyManager) getSystemService(DEVICE_POLICY_SERVICE);
-        mComponentName = new ComponentName(this, DeviceReceiver.class);
-        if (!mPolicyManager.isAdminActive(mComponentName)) {
-            goToSetting();
-        } else {
-            mEnableLock = true;
-        }
-    }
 
     private void initPlayer() {
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -448,6 +457,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 updateStatus();
                 nextHourTimeStamp = getNextHourStamp();
                 requestTasks(nextHourTimeStamp - 3600L);
+                querySchedule();
             }
 
             @Override
@@ -679,9 +689,235 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             case AppConstant.TASK_TYPE_WEATHER:
                 handWeatherTask(task);
                 break;
+            case AppConstant.TASK_TYPE_ON_OFF:
+                handleOnOffTask(task);
+                break;
             default:
                 break;
         }
+    }
+
+    /**
+     * @param task 开关机任务
+     */
+    private void handleOnOffTask(Task task) {
+        //先取消原有的定时开关
+        PowerUtils.cancelPowerOnOff();
+        List<Schedule.ScheduleBean> scheduleList = task.getList();
+        if (scheduleList != null) {
+            DBUtils.getInstance().updateSchedule(scheduleList);
+            handleOnOff(scheduleList);
+        }
+    }
+
+    /**
+     * 每次启动就检查开关机状态，并重新设置值
+     */
+    public void checkOnOff() {
+        ArrayList<Schedule.ScheduleBean> list = (ArrayList<Schedule.ScheduleBean>) DBUtils.getInstance().findAllSchedule();
+        handleOnOff(list);
+    }
+
+    /**
+     * 处理开关机的任务
+     * 1、保存当前的结果到缓存中
+     * 2、清除之前的任务
+     * 3、重新设置当前的设置
+     * 4、每次设置都只是设置最近一次的关机和最近一次的开机
+     * 5、开机或者关机重启后会重新设置
+     *
+     * @param list
+     */
+    public void handleOnOff(List<Schedule.ScheduleBean> list) {
+        if (list == null) {
+            return;
+        }
+        if (list.isEmpty()) {
+            PowerUtils.cancelPowerOnOff();
+        }
+        //day -0 星期天，1-星期一，。。。。
+        long latestOff = 0L;
+        long latestOn = 0L;
+        //当前的时
+        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        //当前的分
+        int min = Calendar.getInstance().get(Calendar.MINUTE);
+        //当前周几
+        int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
+
+        for (Schedule.ScheduleBean scheduleBean : list) {
+            String[] offTimes = scheduleBean.getOffTime().split(":");
+            String[] onTimes = scheduleBean.getOffTime().split(":");
+            if (offTimes.length != 2) {
+                return;
+            }
+            if (onTimes.length != 2) {
+                return;
+            }
+            int offHour = Integer.parseInt(offTimes[0]);
+            int offMin = Integer.parseInt(offTimes[1]);
+
+            int onHour = Integer.parseInt(onTimes[0]);
+            int onMin = Integer.parseInt(onTimes[1]);
+
+            //每天关机
+            if ("0".equals(scheduleBean.getOffDay())) {
+                //与现在星期差
+                for (int i = 1; i <= 7; i++) {
+                    long offTime = getOffsetTime(i, day, offHour, offMin);
+                    if (latestOff < offTime) {
+                        latestOff = offTime;
+                    }
+                }
+            } else if ("1".equals(scheduleBean.getOffDay())) { //星期一 对应2
+                long offTime = getOffsetTime(2, day, offHour, offMin);
+                if (latestOff < offTime) {
+                    latestOff = offTime;
+                }
+            } else if ("2".equals(scheduleBean.getOffDay())) {
+                long offTime = getOffsetTime(3, day, offHour, offMin);
+                if (latestOff < offTime) {
+                    latestOff = offTime;
+                }
+            } else if ("3".equals(scheduleBean.getOffDay())) {
+                long offTime = getOffsetTime(4, day, offHour, offMin);
+                if (latestOff < offTime) {
+                    latestOff = offTime;
+                }
+            } else if ("4".equals(scheduleBean.getOffDay())) {
+                long offTime = getOffsetTime(5, day, offHour, offMin);
+                if (latestOff < offTime) {
+                    latestOff = offTime;
+                }
+            } else if ("5".equals(scheduleBean.getOffDay())) {
+                long offTime = getOffsetTime(6, day, offHour, offMin);
+                if (latestOff < offTime) {
+                    latestOff = offTime;
+                }
+            } else if ("6".equals(scheduleBean.getOffDay())) {
+                long offTime = getOffsetTime(7, day, offHour, offMin);
+                if (latestOff < offTime) {
+                    latestOff = offTime;
+                }
+            } else if ("7".equals(scheduleBean.getOffDay())) {
+                long offTime = getOffsetTime(1, day, offHour, offMin);
+                if (latestOff < offTime) {
+                    latestOff = offTime;
+                }
+            } else if ("8".equals(scheduleBean.getOffDay())) {  //工作日
+                //与现在星期差
+                for (int i = 2; i <= 6; i++) {
+                    long offTime = getOffsetTime(i, day, offHour, offMin);
+                    if (latestOff < offTime) {
+                        latestOff = offTime;
+                    }
+                }
+            } else if ("9".equals(scheduleBean.getOffDay())) {      //
+                for (int i = 1; i <= 7; i = i + 6) {
+                    long offTime = getOffsetTime(i, day, offHour, offMin);
+                    if (latestOff < offTime) {
+                        latestOff = offTime;
+                    }
+                }
+            }
+
+            //每天开机
+            if ("0".equals(scheduleBean.getStartDay())) {
+                //与现在星期差
+                for (int i = 1; i <= 7; i++) {
+                    long onTime = getOffsetTime(i, day, onHour, onMin);
+                    if (latestOn < onTime) {
+                        latestOn = onTime;
+                    }
+                }
+            } else if ("1".equals(scheduleBean.getStartDay())) { //星期一 对应2
+                long onTime = getOffsetTime(2, day, onHour, onMin);
+                if (latestOn < onTime) {
+                    latestOn = onTime;
+                }
+            } else if ("2".equals(scheduleBean.getStartDay())) {
+                long onTime = getOffsetTime(3, day, onHour, onMin);
+                if (latestOn < onTime) {
+                    latestOn = onTime;
+                }
+            } else if ("3".equals(scheduleBean.getStartDay())) {
+                long onTime = getOffsetTime(4, day, onHour, onMin);
+                if (latestOn < onTime) {
+                    latestOn = onTime;
+                }
+            } else if ("4".equals(scheduleBean.getStartDay())) {
+                long onTime = getOffsetTime(5, day, onHour, onMin);
+                if (latestOn < onTime) {
+                    latestOn = onTime;
+                }
+            } else if ("5".equals(scheduleBean.getStartDay())) {
+                long onTime = getOffsetTime(6, day, onHour, onMin);
+                if (latestOn < onTime) {
+                    latestOn = onTime;
+                }
+            } else if ("6".equals(scheduleBean.getStartDay())) {
+                long onTime = getOffsetTime(7, day, onHour, onMin);
+                if (latestOn < onTime) {
+                    latestOn = onTime;
+                }
+            } else if ("7".equals(scheduleBean.getStartDay())) {
+                long onTime = getOffsetTime(1, day, onHour, onMin);
+                if (latestOn < onTime) {
+                    latestOn = onTime;
+                }
+            } else if ("8".equals(scheduleBean.getStartDay())) {  //工作日
+                //与现在星期差
+                for (int i = 2; i <= 6; i++) {
+                    long onTime = getOffsetTime(i, day, onHour, onMin);
+                    if (latestOn < onTime) {
+                        latestOn = onTime;
+                    }
+                }
+            } else if ("9".equals(scheduleBean.getStartDay())) {      //
+                for (int i = 1; i <= 7; i = i + 6) {
+                    long onTime = getOffsetTime(i, day, onHour, onMin);
+                    if (latestOn < onTime) {
+                        latestOn = onTime;
+                    }
+                }
+            }
+        }
+        // 再次取消所设定的开关机
+        PowerUtils.cancelPowerOnOff();
+        //开关机时间都 不为0
+        if (latestOff != 0L && latestOn != 0L) {
+            PowerUtils.setPowerOnOff(latestOff, latestOn);
+        }
+    }
+
+    /**
+     * @param week  Calendar 中的周X 表示的值，周一为2，周六为7
+     * @param day   现在时间在Calendar中的周X
+     * @param sHour
+     * @param sMin
+     * @return
+     */
+    private long getOffsetTime(int week, int day, int sHour, int sMin) {
+        //与现在星期差
+        int offset = week - day;
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, sHour);
+        calendar.set(Calendar.MINUTE, sMin);
+        long offsetTime = 0L;
+        // 小于0 说明是周一后
+        if (offset < 0) {
+            offsetTime = calendar.getTimeInMillis() + Math.abs(offset) * 24L * 60L * 60L * 1000L;
+        } else if (offset == 0) {
+            if (System.currentTimeMillis() - calendar.getTimeInMillis() > 0) {  //今天的时间过了，下一次的周一
+                offset = offset + 7;
+                offsetTime = calendar.getTimeInMillis() + Math.abs(offset) * 24L * 60L * 60L * 1000L;
+            } else {
+                offsetTime = calendar.getTimeInMillis();
+            }
+        } else if (offset > 0) {       //大于0 ，说明是本周
+            offsetTime = calendar.getTimeInMillis() + Math.abs(offset) * 24L * 60L * 60L * 1000L;
+        }
+        return offsetTime;
     }
 
 
@@ -806,16 +1042,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * 休眠
      */
     private void sleep() {
-        if (!mEnableLock) {
-            return;
-        }
-        if (mPolicyManager.isAdminActive(mComponentName)) {
-//            Window localWindow = getWindow();
-//            WindowManager.LayoutParams localLayoutParams = localWindow.getAttributes();
-//            localLayoutParams.screenBrightness = 0.05F;
-//            localWindow.setAttributes(localLayoutParams);
-            mPolicyManager.lockNow();
-        }
         Call<BaseResponse> sleepCall = Api.getDefault(HostType.VOM_HOST).setSleep(Api.getCacheControl(),
                 String.valueOf(mDeviceId), mDeviceCode);
         sleepCall.enqueue(new Callback<BaseResponse>() {
@@ -1381,6 +1607,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     @Override
     protected void onDestroy() {
         mVideoView.stopPlayback();
+        mHandler.removeCallbacksAndMessages(null);
         SQLiteStudioService.instance().stop();
         unregisterReceiver(mAlarmReceiver);
         JMessageClient.unRegisterEventReceiver(this);
@@ -1412,24 +1639,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             return;
         } else {
             startActivity(new Intent(mContext, AboutActivity.class));
-        }
-    }
-
-    private void goToSetting() {
-        Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
-        intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, mComponentName);
-        startActivityForResult(intent, REQUEST_CODE_ADMIN);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (REQUEST_CODE_ADMIN == requestCode) {
-            if (RESULT_OK == resultCode) {
-                mEnableLock = true;
-            } else if (RESULT_CANCELED == resultCode) {
-                mEnableLock = false;
-            }
         }
     }
 

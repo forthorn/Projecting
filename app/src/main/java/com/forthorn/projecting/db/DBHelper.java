@@ -10,6 +10,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DBHelper extends SQLiteOpenHelper {
     public static final String DB_NAME = "Projecting.db";
+
     public static final String TASK_TABLE = "TASK_TABLE";
     public static final String TASK_DEVICE_ID = "task_device_id";
     public static final String TASK_ID = "task_id";
@@ -34,6 +35,13 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String DOWNLOAD_TIME = "download_time";
     public static final String DOWNLOAD_FILE_SIZE = "download_file_size";
 
+    public static final String ONOFF_TABLE = "ONOFF_TABLE";
+    public static final String ONOFF_ID = "on_off_id";
+    public static final String ONOFF_START_TIME = "start_time";
+    public static final String ONOFF_START_DAY = "start_day";
+    public static final String ONOFF_OFF_TIME = "off_time";
+    public static final String ONOFF_OFF_DAY = "off_day";
+
 
     private static final String CREATE_TASK_TABLE = "CREATE TABLE IF NOT EXISTS " + TASK_TABLE
             + " ( " + TASK_ID + " integer primary key ," + TASK_DEVICE_ID + " int," + TASK_TYPE + " int," + TASK_STATUS + " int,"
@@ -45,8 +53,12 @@ public class DBHelper extends SQLiteOpenHelper {
             + " ( " + DOWNLOAD_ID + " integer primary key ," + DOWNLOAD_TASK_ID + " int, " + DOWNLOAD_STATUS + " int,"
             + DOWNLOAD_URL + " text, " + DOWNLOAD_PATH + " text, " + DOWNLOAD_TIME + " int, " + DOWNLOAD_FILE_SIZE + " int" + " ) ";
 
+    private static final String CREATE_ONOFF_TABLE = "CREATE TABLE IF NOT EXISTS " + ONOFF_TABLE
+            + " ( " + ONOFF_ID + " integer primary key ," + ONOFF_START_TIME + " text, " + ONOFF_START_DAY + " text, "
+            + ONOFF_OFF_TIME + " text, " + ONOFF_OFF_DAY + " text " + " ) ";
+
     //数据库当前版本
-    public static final int DB_VERSION = 1;
+    public static final int DB_VERSION = 2;
 
     private static DBHelper dbHelper = null;
 
@@ -65,12 +77,15 @@ public class DBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(CREATE_TASK_TABLE);
         db.execSQL(CREATE_DOWNLOAD_TABLE);
+        db.execSQL(CREATE_ONOFF_TABLE);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         //目前是第一版，之后在此做更新操作
-
+        if (oldVersion == 1) {
+            db.execSQL(CREATE_ONOFF_TABLE);
+        }
     }
 
 

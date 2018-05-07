@@ -186,7 +186,7 @@
 
         <LinearLayout
             android:id="@+id/idle_server_status_ll"
-            android:layout_width="wrap_content"
+            android:layout_width="112dp"
             android:layout_height="34dp"
             android:layout_gravity="right"
             android:layout_marginLeft="8dp"
@@ -201,11 +201,11 @@
                 android:layout_gravity="center_vertical"
                 android:text="服务器："
                 android:textColor="@color/colorWhite"
-                android:textSize="12sp"/>
+                android:textSize="14sp"/>
 
             <TextView
                 android:id="@+id/idle_server_status_tv"
-                android:layout_width="98dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:drawableLeft="@drawable/server_status_selector"
@@ -213,7 +213,7 @@
                 android:enabled="false"
                 android:text="离线"
                 android:textColor="@color/colorWhite"
-                android:textSize="12sp"/>
+                android:textSize="14sp"/>
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

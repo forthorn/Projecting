@@ -1,5 +1,7 @@
 package com.forthorn.projecting.entity;
 
+import java.util.List;
+
 /**
  * Created by: Forthorn
  * Date: 11/4/2017.
@@ -30,7 +32,7 @@ public class Task {
     private int date;
     private String content;
     private int runningStatus;
-
+    private List<Schedule.ScheduleBean> list;
     private Extras extras;
     /**
      * volume : null
@@ -167,6 +169,14 @@ public class Task {
 
     public void setFinish_time(int finish_time) {
         this.finish_time = finish_time;
+    }
+
+    public List<Schedule.ScheduleBean> getList() {
+        return list;
+    }
+
+    public void setList(List<Schedule.ScheduleBean> list) {
+        this.list = list;
     }
 
     public static class Extras {

@@ -36,5 +36,13 @@ public interface BundleKey {
     public static final String Name = "name";
     public static final String HotText = "hottext";
 
-
+    public static final String DEVICE_ON_TIME = "DEVICE_ON_TIME";
+    public static final String DEVICE_OFF_TIME = "DEVICE_OFF_TIME";
+    public static final String DEVICE_MONDAY = "DEVICE_MONDAY";
+    public static final String DEVICE_TUESDAY = "DEVICE_TUESDAY";
+    public static final String DEVICE_WEDNESDAY = "DEVICE_WEDNESDAY";
+    public static final String DEVICE_THURSDAY = "DEVICE_THURSDAY";
+    public static final String DEVICE_FRIDAY = "DEVICE_FRIDAY";
+    public static final String DEVICE_SATURDAY = "DEVICE_SATURDAY";
+    public static final String DEVICE_SUNDAY = "DEVICE_SUNDAY";
 }

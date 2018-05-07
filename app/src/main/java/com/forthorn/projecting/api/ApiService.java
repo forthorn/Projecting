@@ -2,6 +2,7 @@ package com.forthorn.projecting.api;
 
 import com.forthorn.projecting.baserx.BaseResponse;
 import com.forthorn.projecting.entity.IMAccount;
+import com.forthorn.projecting.entity.Schedule;
 import com.forthorn.projecting.entity.TaskRes;
 import com.forthorn.projecting.entity.UserList;
 
@@ -113,6 +114,17 @@ public interface ApiService {
             @Header("Cache-Control") String cacheControl,
             @Field("equipment_id") String equipment_id,
             @Field("equipment_code") String equipment_code
+    );
+
+
+    /**
+     * 定时开关机
+     */
+    @FormUrlEncoded
+    @POST("/api/v1/android/ad/schedule")
+    Call<Schedule> getOnOff(
+            @Header("Cache-Control") String cacheControl,
+            @Field("equipment_id") String equipment_id
     );
 
 

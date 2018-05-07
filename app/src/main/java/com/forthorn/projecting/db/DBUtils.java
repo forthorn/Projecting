@@ -9,6 +9,7 @@ import android.util.Log;
 import com.forthorn.projecting.app.AppApplication;
 import com.forthorn.projecting.app.AppConstant;
 import com.forthorn.projecting.entity.Download;
+import com.forthorn.projecting.entity.Schedule;
 import com.forthorn.projecting.entity.Task;
 
 import java.util.ArrayList;
@@ -335,5 +336,40 @@ public class DBUtils {
         db.close();
     }
 
+    public void updateSchedule(List<Schedule.ScheduleBean> scheduleList) {
+        db = dbHelper.getWritableDatabase();
+        db.delete(DBHelper.DOWNLOAD_TABLE, DBHelper.ONOFF_ID + "=?", new String[]{"*"});
+        db.close();
+        if (scheduleList == null) {
+            return;
+        }
+        int size = scheduleList.size();
+        for (int i = 0; i < size; i++) {
+            ContentValues values = new ContentValues();
+            values.put(DBHelper.ONOFF_ID, i + "");
+            values.put(DBHelper.ONOFF_START_TIME, scheduleList.get(i).getStartTime());
+            values.put(DBHelper.ONOFF_START_DAY, scheduleList.get(i).getStartDay());
+            values.put(DBHelper.ONOFF_OFF_TIME, scheduleList.get(i).getOffTime());
+            values.put(DBHelper.ONOFF_OFF_DAY, scheduleList.get(i).getOffDay());
+            db.insert(DBHelper.ONOFF_TABLE, null, values);
+        }
+        db.close();
+    }
+
+    public List<Schedule.ScheduleBean> findAllSchedule() {
+        db = dbHelper.getWritableDatabase();
+        List<Schedule.ScheduleBean> schedule = new ArrayList<>();
+        Cursor cursor = db.rawQuery("select * from ONOFF_TABLE", null);
+        while (cursor.moveToNext()) {
+            Schedule.ScheduleBean download = new Schedule.ScheduleBean();
+            download.setStartTime(cursor.getString(cursor.getColumnIndex(DBHelper.ONOFF_START_TIME)));
+            download.setStartDay(cursor.getString(cursor.getColumnIndex(DBHelper.ONOFF_START_DAY)));
+            download.setOffTime(cursor.getString(cursor.getColumnIndex(DBHelper.ONOFF_OFF_TIME)));
+            download.setOffDay(cursor.getString(cursor.getColumnIndex(DBHelper.ONOFF_OFF_DAY)));
+            schedule.add(download);
+        }
+        db.close();
+        return schedule;
+    }
 
 }

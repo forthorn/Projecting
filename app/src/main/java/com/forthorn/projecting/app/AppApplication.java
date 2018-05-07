@@ -72,7 +72,7 @@ public class AppApplication extends Application implements Thread.UncaughtExcept
     @Override
     public void uncaughtException(Thread t, Throwable e) {
         if (null != e && null != t) {
-            restartApp();
+//            restartApp();
         }
     }
 }
