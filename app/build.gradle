@@ -14,8 +14,8 @@ android {
         applicationId "com.forthorn.projecting"
         minSdkVersion 15
         targetSdkVersion 20
-        versionCode 38
-        versionName "1.8.0"
+        versionCode 40
+        versionName "1.8.4"
         //PL版本
         ndk {
             //选择要添加的对应cpu类型的.so库。

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/idle_fl"
     android:layout_width="match_parent"
@@ -18,7 +17,7 @@
         android:nextFocusRight="@+id/idle_about_iv"
         android:nextFocusUp="@+id/idle_about_iv"
         android:scaleType="fitXY"
-        tools:src="@drawable/ic_idle_bg"/>
+        tools:src="@drawable/ic_idle_bg" />
 
     <ImageView
         android:id="@+id/idle_about_iv"
@@ -29,7 +28,7 @@
         android:layout_marginTop="18dp"
         android:focusable="true"
         android:focusableInTouchMode="true"
-        android:src="@drawable/ic_info_selector"/>
+        android:src="@drawable/ic_info_selector" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -49,7 +48,7 @@
                 android:layout_width="112dp"
                 android:layout_height="112dp"
                 android:layout_marginTop="4dp"
-                android:src="@color/colorAccent"/>
+                android:src="@color/colorAccent" />
 
             <TextView
                 android:id="@+id/idle_qrcode_tv"
@@ -58,7 +57,7 @@
                 android:layout_marginTop="8dp"
                 android:text="微信扫一扫购买广告"
                 android:textColor="@color/colorWhite"
-                android:textSize="10sp"/>
+                android:textSize="10sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -73,7 +72,7 @@
                 android:gravity="center"
                 android:text="万业兴      让传媒更简单"
                 android:textColor="@color/colorWhite"
-                android:textSize="30sp"/>
+                android:textSize="30sp" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -88,7 +87,7 @@
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:src="@color/colorPrimaryDark"/>
+                        android:src="@color/colorPrimaryDark" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -96,7 +95,7 @@
                         android:layout_marginLeft="14dp"
                         android:text="手机购买更简单"
                         android:textColor="@color/colorWhite"
-                        android:textSize="14sp"/>
+                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -108,7 +107,7 @@
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:src="@color/colorPrimaryDark"/>
+                        android:src="@color/colorPrimaryDark" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -116,7 +115,7 @@
                         android:layout_marginLeft="14dp"
                         android:text="自主选择更方便"
                         android:textColor="@color/colorWhite"
-                        android:textSize="14sp"/>
+                        android:textSize="14sp" />
                 </LinearLayout>
 
             </LinearLayout>
@@ -134,7 +133,7 @@
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:src="@color/colorPrimaryDark"/>
+                        android:src="@color/colorPrimaryDark" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -142,7 +141,7 @@
                         android:layout_marginLeft="14dp"
                         android:text="广告类型多样性"
                         android:textColor="@color/colorWhite"
-                        android:textSize="14sp"/>
+                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -154,7 +153,7 @@
                     <ImageView
                         android:layout_width="30dp"
                         android:layout_height="30dp"
-                        android:src="@color/colorPrimaryDark"/>
+                        android:src="@color/colorPrimaryDark" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -162,7 +161,7 @@
                         android:layout_marginLeft="14dp"
                         android:text="合作加盟找我们"
                         android:textColor="@color/colorWhite"
-                        android:textSize="14sp"/>
+                        android:textSize="14sp" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
@@ -170,7 +169,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="34dp"
+        android:layout_height="68dp"
         android:layout_gravity="bottom"
         android:layout_marginBottom="18dp"
         android:layout_marginLeft="18dp"
@@ -179,21 +178,21 @@
 
         <TextView
             android:layout_width="0dp"
-            android:layout_height="34dp"
+            android:layout_height="68dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:visibility="invisible"/>
+            android:visibility="invisible" />
 
         <LinearLayout
             android:id="@+id/idle_server_status_ll"
-            android:layout_width="112dp"
-            android:layout_height="34dp"
+            android:layout_width="224dp"
+            android:layout_height="68dp"
             android:layout_gravity="right"
-            android:layout_marginLeft="8dp"
+            android:layout_marginLeft="16dp"
             android:background="@drawable/radius_text_bg"
             android:gravity="center_vertical"
-            android:paddingLeft="6dp"
-            android:paddingRight="6dp">
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -201,7 +200,7 @@
                 android:layout_gravity="center_vertical"
                 android:text="服务器："
                 android:textColor="@color/colorWhite"
-                android:textSize="14sp"/>
+                android:textSize="28sp" />
 
             <TextView
                 android:id="@+id/idle_server_status_tv"
@@ -209,11 +208,11 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:drawableLeft="@drawable/server_status_selector"
-                android:drawablePadding="4dp"
+                android:drawablePadding="12dp"
                 android:enabled="false"
                 android:text="离线"
                 android:textColor="@color/colorWhite"
-                android:textSize="14sp"/>
+                android:textSize="28sp" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

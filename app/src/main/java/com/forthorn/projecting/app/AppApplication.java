@@ -5,6 +5,8 @@ import android.app.Application;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.Environment;
 
 import com.forthorn.projecting.BuildConfig;
@@ -32,12 +34,17 @@ public class AppApplication extends Application implements Thread.UncaughtExcept
         super.onCreate();
         mAppApplication = this;
         JMessageClient.init(getApplicationContext(), true);
-        JMessageClient.setDebugMode(true);
+        JMessageClient.setDebugMode(false);
         JMessageClient.setNotificationFlag(JMessageClient.FLAG_NOTIFY_WITH_LED | JMessageClient.FLAG_NOTIFY_WITH_VIBRATE);
         FileDownloader.setup(this);
         Thread.setDefaultUncaughtExceptionHandler(this);
         initBugly();
         LogUtils.init(this);
+        //强制不让字体缩放
+        Resources res = super.getResources();
+        Configuration config = new Configuration();
+        config.setToDefaults();
+        res.updateConfiguration(config, res.getDisplayMetrics());
     }
 
     public static AppApplication getApplication() {

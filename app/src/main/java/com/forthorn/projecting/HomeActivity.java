@@ -23,6 +23,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.forthorn.projecting.api.Api;
@@ -64,6 +65,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import cn.jpush.im.android.api.JMessageClient;
 import cn.jpush.im.android.api.callback.IntegerCallback;
@@ -164,7 +166,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         if (mDeviceId == 0) {
             return;
         }
-        Call<Schedule> scheduleCall = Api.getDefault(HostType.VOM_HOST).getOnOff(Api.getCacheControl(), mUuid);
+        Call<Schedule> scheduleCall = Api.getDefault(HostType.VOM_HOST).getOnOff(Api.getCacheControl(), String.valueOf(mDeviceId));
         scheduleCall.enqueue(new Callback<Schedule>() {
             @Override
             public void onResponse(Call<Schedule> call, Response<Schedule> response) {
@@ -397,6 +399,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
         mUuid = uuidFactory.getDeviceUuid().toString();
 //        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
+//        mUuid = "bb46a94c-0169-3914-bd0c-8705b0ff8a22";
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
@@ -747,7 +750,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
         for (Schedule.ScheduleBean scheduleBean : list) {
             String[] offTimes = scheduleBean.getOffTime().split(":");
-            String[] onTimes = scheduleBean.getOffTime().split(":");
+            String[] onTimes = scheduleBean.getStartTime().split(":");
             if (offTimes.length != 2) {
                 return;
             }
@@ -759,63 +762,63 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
             int onHour = Integer.parseInt(onTimes[0]);
             int onMin = Integer.parseInt(onTimes[1]);
-
+            Log.e("Time", "周几：" + day + hour + min + "Off:H" + offHour + "Off:M" + offMin + "ON:H" + onHour + "ON:M" + onMin);
             //每天关机
             if ("0".equals(scheduleBean.getOffDay())) {
                 //与现在星期差
                 for (int i = 1; i <= 7; i++) {
                     long offTime = getOffsetTime(i, day, offHour, offMin);
-                    if (latestOff < offTime) {
+                    if (latestOff == 0L || latestOff > offTime) {
                         latestOff = offTime;
                     }
                 }
             } else if ("1".equals(scheduleBean.getOffDay())) { //星期一 对应2
                 long offTime = getOffsetTime(2, day, offHour, offMin);
-                if (latestOff < offTime) {
+                if (latestOff == 0L || latestOff > offTime) {
                     latestOff = offTime;
                 }
             } else if ("2".equals(scheduleBean.getOffDay())) {
                 long offTime = getOffsetTime(3, day, offHour, offMin);
-                if (latestOff < offTime) {
+                if (latestOff == 0L || latestOff > offTime) {
                     latestOff = offTime;
                 }
             } else if ("3".equals(scheduleBean.getOffDay())) {
                 long offTime = getOffsetTime(4, day, offHour, offMin);
-                if (latestOff < offTime) {
+                if (latestOff == 0L || latestOff > offTime) {
                     latestOff = offTime;
                 }
             } else if ("4".equals(scheduleBean.getOffDay())) {
                 long offTime = getOffsetTime(5, day, offHour, offMin);
-                if (latestOff < offTime) {
+                if (latestOff == 0L || latestOff > offTime) {
                     latestOff = offTime;
                 }
             } else if ("5".equals(scheduleBean.getOffDay())) {
                 long offTime = getOffsetTime(6, day, offHour, offMin);
-                if (latestOff < offTime) {
+                if (latestOff == 0L || latestOff > offTime) {
                     latestOff = offTime;
                 }
             } else if ("6".equals(scheduleBean.getOffDay())) {
                 long offTime = getOffsetTime(7, day, offHour, offMin);
-                if (latestOff < offTime) {
+                if (latestOff == 0L || latestOff > offTime) {
                     latestOff = offTime;
                 }
             } else if ("7".equals(scheduleBean.getOffDay())) {
                 long offTime = getOffsetTime(1, day, offHour, offMin);
-                if (latestOff < offTime) {
+                if (latestOff == 0L || latestOff > offTime) {
                     latestOff = offTime;
                 }
             } else if ("8".equals(scheduleBean.getOffDay())) {  //工作日
                 //与现在星期差
                 for (int i = 2; i <= 6; i++) {
                     long offTime = getOffsetTime(i, day, offHour, offMin);
-                    if (latestOff < offTime) {
+                    if (latestOff == 0L || latestOff > offTime) {
                         latestOff = offTime;
                     }
                 }
-            } else if ("9".equals(scheduleBean.getOffDay())) {      //
+            } else if ("9".equals(scheduleBean.getOffDay())) {      //周末
                 for (int i = 1; i <= 7; i = i + 6) {
                     long offTime = getOffsetTime(i, day, offHour, offMin);
-                    if (latestOff < offTime) {
+                    if (latestOff == 0L || latestOff > offTime) {
                         latestOff = offTime;
                     }
                 }
@@ -826,57 +829,57 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 //与现在星期差
                 for (int i = 1; i <= 7; i++) {
                     long onTime = getOffsetTime(i, day, onHour, onMin);
-                    if (latestOn < onTime) {
+                    if (latestOn == 0L || latestOn > onTime && onTime > latestOff) {
                         latestOn = onTime;
                     }
                 }
             } else if ("1".equals(scheduleBean.getStartDay())) { //星期一 对应2
                 long onTime = getOffsetTime(2, day, onHour, onMin);
-                if (latestOn < onTime) {
+                if (latestOn == 0L || latestOn > onTime && onTime > latestOff) {
                     latestOn = onTime;
                 }
             } else if ("2".equals(scheduleBean.getStartDay())) {
                 long onTime = getOffsetTime(3, day, onHour, onMin);
-                if (latestOn < onTime) {
+                if (latestOn == 0L || latestOn > onTime && onTime > latestOff) {
                     latestOn = onTime;
                 }
             } else if ("3".equals(scheduleBean.getStartDay())) {
                 long onTime = getOffsetTime(4, day, onHour, onMin);
-                if (latestOn < onTime) {
+                if (latestOn == 0L || latestOn > onTime && onTime > latestOff) {
                     latestOn = onTime;
                 }
             } else if ("4".equals(scheduleBean.getStartDay())) {
                 long onTime = getOffsetTime(5, day, onHour, onMin);
-                if (latestOn < onTime) {
+                if (latestOn == 0L || latestOn > onTime && onTime > latestOff) {
                     latestOn = onTime;
                 }
             } else if ("5".equals(scheduleBean.getStartDay())) {
                 long onTime = getOffsetTime(6, day, onHour, onMin);
-                if (latestOn < onTime) {
+                if (latestOn == 0L || latestOn > onTime && onTime > latestOff) {
                     latestOn = onTime;
                 }
             } else if ("6".equals(scheduleBean.getStartDay())) {
                 long onTime = getOffsetTime(7, day, onHour, onMin);
-                if (latestOn < onTime) {
+                if (latestOn == 0L || latestOn > onTime && onTime > latestOff) {
                     latestOn = onTime;
                 }
             } else if ("7".equals(scheduleBean.getStartDay())) {
                 long onTime = getOffsetTime(1, day, onHour, onMin);
-                if (latestOn < onTime) {
+                if (latestOn == 0L || latestOn > onTime && onTime > latestOff) {
                     latestOn = onTime;
                 }
             } else if ("8".equals(scheduleBean.getStartDay())) {  //工作日
                 //与现在星期差
                 for (int i = 2; i <= 6; i++) {
                     long onTime = getOffsetTime(i, day, onHour, onMin);
-                    if (latestOn < onTime) {
+                    if (latestOn == 0L || latestOn > onTime && onTime > latestOff) {
                         latestOn = onTime;
                     }
                 }
-            } else if ("9".equals(scheduleBean.getStartDay())) {      //
+            } else if ("9".equals(scheduleBean.getStartDay())) {      //周末
                 for (int i = 1; i <= 7; i = i + 6) {
                     long onTime = getOffsetTime(i, day, onHour, onMin);
-                    if (latestOn < onTime) {
+                    if (latestOn == 0L || latestOn > onTime && onTime > latestOff) {
                         latestOn = onTime;
                     }
                 }
@@ -886,6 +889,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         PowerUtils.cancelPowerOnOff();
         //开关机时间都 不为0
         if (latestOff != 0L && latestOn != 0L) {
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//            Toast.makeText(mContext, "开关机时间:下一次关机：" + simpleDateFormat.format(latestOff)
+//                    + "后下一次开机：" + simpleDateFormat.format(latestOn) + "后", Toast.LENGTH_LONG).show();
+            Log.e("开关机时间", "开关机时间:下一次关机：" + latestOff + "__" + simpleDateFormat.format(latestOff)
+                    + "后下一次开机：" + latestOn + "__" + simpleDateFormat.format(latestOn) + "后");
             PowerUtils.setPowerOnOff(latestOff, latestOn);
         }
     }
@@ -900,7 +908,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private long getOffsetTime(int week, int day, int sHour, int sMin) {
         //与现在星期差
         int offset = week - day;
-        Calendar calendar = Calendar.getInstance();
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"));
         calendar.set(Calendar.HOUR_OF_DAY, sHour);
         calendar.set(Calendar.MINUTE, sMin);
         long offsetTime = 0L;

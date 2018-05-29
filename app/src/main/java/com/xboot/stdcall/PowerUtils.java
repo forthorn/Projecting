@@ -1,6 +1,10 @@
 package com.xboot.stdcall;
 
+import android.util.Log;
+
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  *
@@ -33,7 +37,9 @@ public class PowerUtils {
         if (mTimeOn == -1 || mTimeOff == -1) {
             return false;
         }
-        long nowTime = Calendar.getInstance().getTimeInMillis();
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
+        long nowTime = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")).getTimeInMillis();
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         // 关机
         long second = (mTimeOff - nowTime) / 1000;// 总共多少秒
         byte eH = (byte) (second / 3600);// 总共多少小时
@@ -43,6 +49,9 @@ public class PowerUtils {
         second = (mTimeOn - mTimeOff) / 1000;
         byte sH = (byte) (second / 3600);
         byte sM = (byte) ((second / 60) % 60);
+        Log.e("setPowerOnOff", "off" + simpleDateFormat.format(mTimeOff) + "On:" +
+                simpleDateFormat.format(mTimeOn) + "sH：" + sH + "sM" + sM
+                + "eH:" + eH + "eM:" + eM);
         return setPowerOnOff(sH, sM, eH, eM, (byte) 3);
     }
 

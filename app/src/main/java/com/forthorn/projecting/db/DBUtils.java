@@ -337,12 +337,12 @@ public class DBUtils {
     }
 
     public void updateSchedule(List<Schedule.ScheduleBean> scheduleList) {
-        db = dbHelper.getWritableDatabase();
-        db.delete(DBHelper.DOWNLOAD_TABLE, DBHelper.ONOFF_ID + "=?", new String[]{"*"});
-        db.close();
         if (scheduleList == null) {
             return;
         }
+        db = dbHelper.getWritableDatabase();
+//        db.delete(DBHelper.ONOFF_TABLE, DBHelper.ONOFF_START_TIME + "=?", new String[]{"*"});
+        db.execSQL("DELETE FROM " + DBHelper.ONOFF_TABLE);
         int size = scheduleList.size();
         for (int i = 0; i < size; i++) {
             ContentValues values = new ContentValues();

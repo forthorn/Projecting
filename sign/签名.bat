@@ -1,1 +1,1 @@
-java -jar signapk.jar platform.x509.pem platform.pk8 AndroidApi.apk AndroidApiSign.apk
+java -jar signapk.jar platform.x509.pem platform.pk8 Projecting_v1.8.4_40_debug.apk Projecting_v1.8.4_40_Sign.apk
