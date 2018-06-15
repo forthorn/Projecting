@@ -30,26 +30,11 @@ android {
         ]
     }
 
-    signingConfigs {
-        debug {
-            storeFile file(properties.getProperty("keystore_storeFile"))
-            storePassword properties.getProperty("keystore_storePassword")
-            keyAlias properties.getProperty("keystore_keyAlias")
-            keyPassword properties.getProperty("keystore_keyPassword")
-        }
-        release {
-            storeFile file(properties.getProperty("keystore_storeFile"))
-            storePassword properties.getProperty("keystore_storePassword")
-            keyAlias properties.getProperty("keystore_keyAlias")
-            keyPassword properties.getProperty("keystore_keyPassword")
-        }
-    }
-
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+//            signingConfig signingConfigs.release
             applicationVariants.all { variant ->
                 variant.outputs.each { output ->
                     def outputFile = output.outputFile
@@ -69,7 +54,7 @@ android {
         debug {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+//            signingConfig signingConfigs.release
             applicationVariants.all { variant ->
                 variant.outputs.each { output ->
                     def outputFile = output.outputFile
