@@ -695,9 +695,23 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             case AppConstant.TASK_TYPE_ON_OFF:
                 handleOnOffTask(task);
                 break;
+
+            case AppConstant.TASK_TYPE_INTERCUT_VIDEO:
+                handleIntercutVideo(task);
+                break;
             default:
                 break;
         }
+    }
+
+    /**
+     * 插播视频广告
+     *
+     * @param task
+     */
+    private void handleIntercutVideo(Task task) {
+
+
     }
 
     /**

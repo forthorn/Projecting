@@ -16,6 +16,7 @@ public class AppConstant {
     public static final int TASK_TYPE_VIDEO = 6;
     public static final int TASK_TYPE_WEATHER = 7;
     public static final int TASK_TYPE_ON_OFF = 8;
+    public static final int TASK_TYPE_INTERCUT_VIDEO = 9;
 
     public static final int TASK_STATUS_ADD = 0;
     public static final int TASK_STATUS_DELETE = 1;
