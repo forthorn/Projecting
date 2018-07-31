@@ -45,7 +45,8 @@ public interface ApiService {
             @Header("Cache-Control") String cacheControl,
             @Field("equipment_id") int equipmentId,
             @Field("is_sleep") int isSleep,
-            @Field("volume") int volume
+            @Field("volume") int volume,
+            @Field("insert_ad_status") int intercut//0-已经取消或未插播,1表示正在插播
     );
 
     /**

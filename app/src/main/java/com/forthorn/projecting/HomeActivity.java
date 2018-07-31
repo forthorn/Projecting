@@ -23,7 +23,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.forthorn.projecting.api.Api;
@@ -142,6 +141,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     private Map<Integer, Integer> mTaskIds = new HashMap<>();
 
+    //是否是在执行插播的任务
+    private boolean mInterCutting;
+    //插播的任务
+    private Task mInterCuttingTask;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -203,7 +207,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             });
             int targetVolume = (int) Math.ceil(current * 100D / maxVolume);
             Call<BaseResponse> updateCall = Api.getDefault(HostType.VOM_HOST).updateStatus(Api.getCacheControl(),
-                    mDeviceId, AppConstant.STATUS_WAKE_UP, targetVolume);
+                    mDeviceId, AppConstant.STATUS_WAKE_UP, targetVolume, mInterCutting ? 1 : 0);
             updateCall.enqueue(new Callback<BaseResponse>() {
                 @Override
                 public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
@@ -695,7 +699,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             case AppConstant.TASK_TYPE_ON_OFF:
                 handleOnOffTask(task);
                 break;
-
             case AppConstant.TASK_TYPE_INTERCUT_VIDEO:
                 handleIntercutVideo(task);
                 break;
@@ -710,8 +713,39 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * @param task
      */
     private void handleIntercutVideo(Task task) {
-
-
+        //1表示取消，0/2表示新增或者更新
+        if (task.getStatus() == 1) {
+            mInterCuttingTask = null;
+            mInterCutting = false;
+            updateStatus();
+            //更新当前的状态
+            if (mStatus == Status.VIDEO) {
+                mStatus = Status.IDLE;
+            } else if (mStatus == Status.VIDEO_TEXT) {
+                mStatus = Status.IDLE_TEXT;
+            }
+            refreshStatus();
+            //重新查询任务开始
+            queryTask();
+        } else if (task.getStatus() == 0 ||
+                task.getStatus() == 2) {
+            mInterCuttingTask = task;
+            mInterCutting = true;
+            updateStatus();
+            //执行播放任务
+            //先暂停图片播放
+            mPicturePager.stop();
+            //再变更状态为视频播放或者视频文字播放
+            if (mStatus == Status.VIDEO_TEXT
+                    || mStatus == Status.PICTURE_TEXT
+                    || mStatus == Status.IDLE_TEXT) {
+                mStatus = Status.VIDEO_TEXT;
+            } else {
+                mStatus = Status.VIDEO;
+            }
+            refreshStatus();
+            playVideo(task);
+        }
     }
 
     /**
@@ -1014,7 +1048,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      */
     private void addAlarmTask(Task task) {
 //            已经添加并正在执行的任务不再添加闹钟
-        if (new Integer(task.getId()).equals((Integer) mTaskIds.get(task.getType()))) {
+        if (Integer.valueOf(task.getId()).equals((Integer) mTaskIds.get(task.getType()))) {
             return;
         }
         android.os.Message message = mHandler.obtainMessage();
@@ -1685,6 +1719,13 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         //Toast.makeText(mContext, "执行：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), //Toast.LENGTH_SHORT).show();
         switch (task.getType()) {
             case AppConstant.TASK_TYPE_PICTURE:
+                //插播广告过程中，不执行，直接设置结束的任务
+                if (mInterCutting) {
+                    task.setRunningStatus(AppConstant.TASK_RUNNING_STATUS_GOING);
+                    DBUtils.getInstance().updateTask(task);
+                    setFinishAlarmTask(task);
+                    return;
+                }
                 if (mStatus == Status.VIDEO_TEXT
                         || mStatus == Status.PICTURE_TEXT
                         || mStatus == Status.IDLE_TEXT) {
@@ -1719,6 +1760,13 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 playText(task);
                 break;
             case AppConstant.TASK_TYPE_VIDEO:
+                //插播广告过程中，不执行，直接设置结束的任务
+                if (mInterCutting) {
+                    task.setRunningStatus(AppConstant.TASK_RUNNING_STATUS_GOING);
+                    DBUtils.getInstance().updateTask(task);
+                    setFinishAlarmTask(task);
+                    return;
+                }
                 if (mStatus == Status.VIDEO_TEXT
                         || mStatus == Status.PICTURE_TEXT
                         || mStatus == Status.IDLE_TEXT) {
@@ -1795,6 +1843,26 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         deleteAlarmTask(task);
         DBUtils.getInstance().deleteTask(task);
         LogUtils.e("切换状态", "结束前状态" + mStatus.name());
+        //插播广告的状态下，结束之前的任务或者挂起的任务
+        if (mInterCutting) {
+            LogUtils.e("插播视频播放中", "当前状态：" + mStatus.name());
+            if (mStatus == Status.VIDEO_TEXT &&
+                    (task.getType() == AppConstant.TASK_TYPE_TEXT ||
+                            task.getType() == AppConstant.TASK_TYPE_WEATHER)) {
+                if (mTextTv.getTag().equals(task.getId())) {
+                    mTextTv.setText("");
+                    mStatus = Status.VIDEO;
+                }
+            }
+            mIdleFl.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    refreshStatus();
+                }
+            }, 2000);
+            return;
+
+        }
         switch (mStatus) {
             case VIDEO:
                 if (mVideoView.getTag().equals(task.getId())) {
@@ -1985,10 +2053,18 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         public void onCompletion(PLMediaPlayer plMediaPlayer) {
             LogUtils.i(TAG, "Play Completed !");
 //            Toast.makeText(mContext, "本次视频播放完成!", Toast.LENGTH_SHORT).show();
-            if (mTaskIds.get(AppConstant.TASK_TYPE_VIDEO) == null) {
+            //如果是插播的任务，则继续进行插播视频的播放，不需要停止
+            if (mInterCutting && mInterCuttingTask != null) {
+                playVideo(mInterCuttingTask);
+            }
+            if (mTaskIds.get(AppConstant.TASK_TYPE_VIDEO) == null)
+
+            {
                 LogUtils.e("onCompletion", "taskids get TASK_TYPE_VIDEO is null!");
                 return;
-            } else {
+            } else
+
+            {
                 int taskId = mTaskIds.get(AppConstant.TASK_TYPE_VIDEO);
                 Task task = DBUtils.getInstance().findTask(taskId);
                 LogUtils.e("onCompletion", "taskids getTask id is " + taskId);
