@@ -715,18 +715,24 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void handleIntercutVideo(Task task) {
         //1表示取消，0/2表示新增或者更新
         if (task.getStatus() == 1) {
+            mVideoView.pause();
+            mVideoView.stopPlayback();
             mInterCuttingTask = null;
             mInterCutting = false;
             updateStatus();
             //更新当前的状态
-            if (mStatus == Status.VIDEO) {
-                mStatus = Status.IDLE;
-            } else if (mStatus == Status.VIDEO_TEXT) {
-                mStatus = Status.IDLE_TEXT;
-            }
-            refreshStatus();
+            mStatus = Status.IDLE;
             //重新查询任务开始
+            //重置一切状态
+            mHandler.removeCallbacksAndMessages(null);
+            mTaskIds.clear();
             queryTask();
+            mVideoView.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    refreshStatus();
+                }
+            }, 500);
         } else if (task.getStatus() == 0 ||
                 task.getStatus() == 2) {
             mInterCuttingTask = task;
@@ -2042,6 +2048,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     return false;
                 default:
                     break;
+            }
+            //遇到错误后再尝试重新播放
+            try {
+                mVideoView.start();
+            } catch (Exception e) {
             }
             return true;
         }

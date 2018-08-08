@@ -202,15 +202,14 @@ public class DBUtils {
                 task.setContent(cursor.getString(cursor.getColumnIndex(DBHelper.TASK_CONTENT)));
                 task.setStart_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_START_TIME)));
                 task.setFinish_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_FINISH_TIME)));
+                Log.e("查询Pause：", task.toString());
                 if (task.getFinish_time() < time) {
                     db.delete(DBHelper.TASK_TABLE, DBHelper.TASK_ID + " =?",
                             new String[]{String.valueOf(task.getId())});
                     Log.e("查暂停-删过期Task", task.toString());
                 } else {
-                    if (task.getRunningStatus() == AppConstant.TASK_RUNNING_STATUS_GOING) {
-                        tasks.add(task);
-                        Log.e("查到暂停Task", task.toString());
-                    }
+                    tasks.add(task);
+                    Log.e("查到暂停Task", task.toString());
                 }
             }
             db.setTransactionSuccessful();
