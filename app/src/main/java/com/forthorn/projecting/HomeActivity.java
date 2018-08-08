@@ -2056,15 +2056,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             //如果是插播的任务，则继续进行插播视频的播放，不需要停止
             if (mInterCutting && mInterCuttingTask != null) {
                 playVideo(mInterCuttingTask);
+                return;
             }
-            if (mTaskIds.get(AppConstant.TASK_TYPE_VIDEO) == null)
-
-            {
+            if (mTaskIds.get(AppConstant.TASK_TYPE_VIDEO) == null) {
                 LogUtils.e("onCompletion", "taskids get TASK_TYPE_VIDEO is null!");
                 return;
-            } else
-
-            {
+            } else {
                 int taskId = mTaskIds.get(AppConstant.TASK_TYPE_VIDEO);
                 Task task = DBUtils.getInstance().findTask(taskId);
                 LogUtils.e("onCompletion", "taskids getTask id is " + taskId);
