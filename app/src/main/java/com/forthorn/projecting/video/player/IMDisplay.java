@@ -1,4 +1,4 @@
-package com.forthorn.projecting.player;
+package com.forthorn.projecting.video.player;
 
 import android.view.SurfaceHolder;
 import android.view.View;

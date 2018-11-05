@@ -370,7 +370,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initPlayer() {
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        mVideoView.setUp(this);
+        mVideoView.setUp(this, VideoView.TYPE_ML);
     }
 
     private void initIM() {

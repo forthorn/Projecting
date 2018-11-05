@@ -1,4 +1,4 @@
-package com.forthorn.projecting.player;
+package com.forthorn.projecting.video.player;
 
 import android.media.MediaPlayer;
 import android.util.Log;
@@ -28,8 +28,8 @@ public class MPlayer implements IMPlayer,MediaPlayer.OnBufferingUpdateListener,
     private boolean isVideoSizeMeasured=false;  //视频宽高是否已获取，且不为0
     private boolean isMediaPrepared=false;      //视频资源是否准备完成
     private boolean isSurfaceCreated=false;     //Surface是否被创建
-    private boolean isUserWantToPlay=false;     //使用者是否打算播放
-    private boolean isResumed=false;            //是否在Resume状态
+    private boolean isUserWantToPlay=true;     //使用者是否打算播放
+    private boolean isResumed=true;            //是否在Resume状态
 
     private boolean mIsCrop=false;
 

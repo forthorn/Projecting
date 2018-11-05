@@ -1,4 +1,4 @@
-package com.forthorn.projecting.player;
+package com.forthorn.projecting.video.player;
 
 /**
  * Created by: Forthorn
