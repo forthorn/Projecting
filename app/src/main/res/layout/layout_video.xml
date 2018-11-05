@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:id="@+id/video_fl"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent"
-             android:background="@android:color/black"
-             android:orientation="vertical">
+    android:id="@+id/video_fl"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:orientation="vertical">
 
-    <com.pili.pldroid.player.widget.PLVideoTextureView
+    <!--<com.pili.pldroid.player.widget.PLVideoTextureView-->
+    <!--android:id="@+id/video_view"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:layout_gravity="center" />-->
+
+    <com.forthorn.projecting.video.VideoView
         android:id="@+id/video_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"/>
-
+        android:layout_height="match_parent" />
     <!--<com.xiao.nicevideoplayer.NiceVideoPlayer-->
-        <!--android:id="@+id/video_view2"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent"/>-->
+    <!--android:id="@+id/video_view2"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="match_parent"/>-->
 
 </FrameLayout>

@@ -20,7 +20,8 @@ public class ApiConstants {
 
 
     public static final String JPUSH_HOST = "http://api.im.jpush.cn";
-    public static final String VOM_HOST = "http://advert.chindor.com";
+//    public static final String VOM_HOST = "http://advert.chindor.com";
+    public static final String VOM_HOST = "http://ahwyx.com";
 
     public static final String DEVICE_ANDROID = "0";
     public static final String DEVICE_IOS = "1";

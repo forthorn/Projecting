@@ -78,12 +78,17 @@ android {
         }
     }
 
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     // 此处以JMessage 2.2.1 版本为例。
     // 此处以JCore 1.1.6 版本为例。
+    compile project(':libvlc')
+    compile project(':libpldroid')
     compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.qiniu:happy-dns:0.2.+'
     compile 'cn.jiguang.sdk:jmessage:2.2.1'
