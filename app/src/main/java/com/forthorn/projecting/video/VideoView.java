@@ -11,6 +11,7 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import com.forthorn.projecting.util.LogUtils;
+import com.forthorn.projecting.video.exo.ExoVideoView;
 import com.forthorn.projecting.video.pl.PLVideoView;
 import com.forthorn.projecting.video.player.MVideoView;
 import com.forthorn.projecting.video.vlc.VLCVideoView;
@@ -27,6 +28,7 @@ public class VideoView extends FrameLayout {
     public static final int TYPE_VLC = 0;
     public static final int TYPE_PL = 1;
     public static final int TYPE_ML = 2;
+    public static final int TYPE_EXO = 3;
 
     public VideoView(@NonNull Context context) {
         this(context, null);
@@ -63,6 +65,9 @@ public class VideoView extends FrameLayout {
                 mIVideoView = new MVideoView(context);
                 Toast.makeText(context, "MVideoView", Toast.LENGTH_SHORT).show();
                 break;
+            case TYPE_EXO:
+                mIVideoView = new ExoVideoView(context);
+                Toast.makeText(context, "ExoVideoView", Toast.LENGTH_SHORT).show();
         }
         LayoutParams layoutParams = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         addView((View) mIVideoView, layoutParams);

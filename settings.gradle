@@ -1,2 +1,2 @@
-include ':app', ':libpldroid'
+include ':app', ':libpldroid', ':libexo'
 include ':libvlc'
