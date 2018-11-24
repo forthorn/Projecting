@@ -10,13 +10,8 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import com.forthorn.projecting.util.LogUtils;
 import com.forthorn.projecting.video.exo.ExoVideoView;
-import com.forthorn.projecting.video.pl.PLVideoView;
 import com.forthorn.projecting.video.player.MVideoView;
-import com.forthorn.projecting.video.vlc.VLCVideoView;
-
-import org.videolan.vlc.util.VLCInstance;
 
 public class VideoView extends FrameLayout {
 
@@ -44,21 +39,13 @@ public class VideoView extends FrameLayout {
     }
 
     public void setUp(IVideoListener iVideoListener, int type) {
-        //加载库文件
-        if (VLCInstance.testCompatibleCPU(context)) {
-            LogUtils.e(TAG, "support   cpu");
-            Toast.makeText(context, "支持cpu", Toast.LENGTH_SHORT).show();
-        } else {
-            LogUtils.e(TAG, "not support  cpu");
-            Toast.makeText(context, "不支持cpu", Toast.LENGTH_SHORT).show();
-        }
         switch (type) {
             case TYPE_VLC:
-                mIVideoView = new VLCVideoView(context);
+//                mIVideoView = new VLCVideoView(context);
                 Toast.makeText(context, "VLCPlayer", Toast.LENGTH_SHORT).show();
                 break;
             case TYPE_PL:
-                mIVideoView = new PLVideoView(context);
+//                mIVideoView = new PLVideoView(context);
                 Toast.makeText(context, "PLVideoView", Toast.LENGTH_SHORT).show();
                 break;
             case TYPE_ML:

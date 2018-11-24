@@ -57,6 +57,7 @@ import com.xboot.stdcall.PowerUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -328,7 +329,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         taskResCall.enqueue(new Callback<TaskRes>() {
             @Override
             public void onResponse(Call<TaskRes> call, Response<TaskRes> response) {
-                LogUtils.e("查询任务", "结果：" + response.toString());
+                LogUtils.e("查询任务", "结果：" + response.raw().body().toString());
                 TaskRes taskRes = response.body();
                 if (taskRes == null) {
                     //Toast.makeText(mContext, "查询失败：空", //Toast.LENGTH_SHORT).show();

@@ -27,5 +27,8 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.google.android.exoplayer:exoplayer:2.8.4'
+    compile 'com.android.support:appcompat-v7:28.0.0'
+    compile 'tv.danmaku.ijk.media:ijkplayer-java:0.8.8'
+    compile 'tv.danmaku.ijk.media:ijkplayer-exo:0.8.8'
+    compile 'com.android.support:support-annotations:28.0.0'
 }
