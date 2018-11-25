@@ -90,7 +90,7 @@ dependencies {
     // 此处以JCore 1.1.6 版本为例。
 //    compile project(':libvlc')
 //    compile project(':libpldroid')
-    compile project(':libexo')
+//    compile project(':libexo')
     compile project(':libijk')
     compile 'com.android.support:appcompat-v7:28.0.0'
     compile 'com.qiniu:happy-dns:0.2.+'

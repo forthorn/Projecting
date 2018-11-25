@@ -45,7 +45,7 @@ public class Settings {
 
     public int getPlayer() {
         String key = mAppContext.getString(R.string.pref_key_player);
-        String value = mSharedPreferences.getString(key, "2");
+        String value = mSharedPreferences.getString(key, "3");
         try {
             return Integer.valueOf(value).intValue();
         } catch (NumberFormatException e) {
@@ -90,7 +90,7 @@ public class Settings {
 
     public boolean getEnableTextureView() {
         String key = mAppContext.getString(R.string.pref_key_enable_texture_view);
-        return mSharedPreferences.getBoolean(key, false);
+        return mSharedPreferences.getBoolean(key, true);
     }
 
     public boolean getEnableDetachedSurfaceTextureView() {

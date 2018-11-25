@@ -21,6 +21,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -215,12 +216,25 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
         mRenderView.setVideoRotation(mVideoRotationDegree);
     }
 
+    /**
+     * 获取截图
+     *
+     * @return
+     */
+    @TargetApi(14)
+    public Bitmap getShortcut() {
+        return this.mRenderView instanceof TextureRenderView ?
+                ((TextureRenderView) this.mRenderView).getBitmap() : null;
+    }
+
     public void setRender(int render) {
         switch (render) {
             case RENDER_NONE:
                 setRenderView(null);
+                Log.e(TAG, "Render:RENDER_NONE");
                 break;
             case RENDER_TEXTURE_VIEW: {
+                Log.e(TAG, "Render:RENDER_TEXTURE_VIEW");
                 TextureRenderView renderView = new TextureRenderView(getContext());
                 if (mMediaPlayer != null) {
                     renderView.getSurfaceHolder().bindToMediaPlayer(mMediaPlayer);
@@ -232,11 +246,13 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
                 break;
             }
             case RENDER_SURFACE_VIEW: {
+                Log.e(TAG, "Render:RENDER_SURFACE_VIEW");
                 SurfaceRenderView renderView = new SurfaceRenderView(getContext());
                 setRenderView(renderView);
                 break;
             }
             default:
+                Log.e(TAG, "Render:invalid render");
                 Log.e(TAG, String.format(Locale.getDefault(), "invalid render %d\n", render));
                 break;
         }
@@ -409,8 +425,11 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
 
     IMediaPlayer.OnPreparedListener mPreparedListener = new IMediaPlayer.OnPreparedListener() {
         public void onPrepared(IMediaPlayer mp) {
+            Log.e(TAG, "onPrepared:");
             mPrepareEndTime = System.currentTimeMillis();
-            mHudViewHolder.updateLoadCost(mPrepareEndTime - mPrepareStartTime);
+            if (mHudViewHolder != null) {
+                mHudViewHolder.updateLoadCost(mPrepareEndTime - mPrepareStartTime);
+            }
             mCurrentState = STATE_PREPARED;
 
             // Get the capabilities of the player for this stream
@@ -466,6 +485,7 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
     private IMediaPlayer.OnCompletionListener mCompletionListener =
             new IMediaPlayer.OnCompletionListener() {
                 public void onCompletion(IMediaPlayer mp) {
+                    Log.e(TAG, "onCompletion:");
                     mCurrentState = STATE_PLAYBACK_COMPLETED;
                     mTargetState = STATE_PLAYBACK_COMPLETED;
                     if (mMediaController != null) {
@@ -584,6 +604,7 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
             new IMediaPlayer.OnBufferingUpdateListener() {
                 public void onBufferingUpdate(IMediaPlayer mp, int percent) {
                     mCurrentBufferPercentage = percent;
+                    Log.e(TAG, "onBufferingUpdate:" + percent);
                 }
             };
 
@@ -592,13 +613,16 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
         @Override
         public void onSeekComplete(IMediaPlayer mp) {
             mSeekEndTime = System.currentTimeMillis();
-            mHudViewHolder.updateSeekCost(mSeekEndTime - mSeekStartTime);
+            if (mHudViewHolder != null) {
+                mHudViewHolder.updateSeekCost(mSeekEndTime - mSeekStartTime);
+            }
         }
     };
 
     private IMediaPlayer.OnTimedTextListener mOnTimedTextListener = new IMediaPlayer.OnTimedTextListener() {
         @Override
         public void onTimedText(IMediaPlayer mp, IjkTimedText text) {
+            Log.e(TAG, "onTimedText:" + text.getText());
             if (text != null) {
                 subtitleDisplay.setText(text.getText());
             }
@@ -1064,7 +1088,7 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
                     } else {
                         ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "overlay-format", pixelFormat);
                     }
-                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 1);
+                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 10);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 0);
 
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http-detect-range-support", 0);

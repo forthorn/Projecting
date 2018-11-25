@@ -60,7 +60,9 @@ public class Downloader {
         if (DBUtils.getInstance().findDownload(download.getId()) == null) {
             DBUtils.getInstance().insertDownload(download);
         }
-        FileDownloader.getImpl().setMaxNetworkThreadCount(1);
+        if (FileDownloader.getImpl().isServiceConnected()) {
+            FileDownloader.getImpl().setMaxNetworkThreadCount(1);
+        }
         FileDownloader.getImpl().create(task.getContent())
                 .setPath(dir + File.separator + fileName, false)
                 .setTag(new Integer(task.getId()))

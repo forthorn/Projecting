@@ -10,7 +10,8 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import com.forthorn.projecting.video.exo.ExoVideoView;
+//import com.forthorn.projecting.video.exo.ExoVideoView;
+import com.forthorn.projecting.video.ijk.IJKVideoView;
 import com.forthorn.projecting.video.player.MVideoView;
 
 public class VideoView extends FrameLayout {
@@ -41,19 +42,19 @@ public class VideoView extends FrameLayout {
     public void setUp(IVideoListener iVideoListener, int type) {
         switch (type) {
             case TYPE_VLC:
-//                mIVideoView = new VLCVideoView(context);
-                Toast.makeText(context, "VLCPlayer", Toast.LENGTH_SHORT).show();
+                mIVideoView = new IJKVideoView(context);
+                Toast.makeText(context, "IJKVideoView", Toast.LENGTH_SHORT).show();
                 break;
             case TYPE_PL:
-//                mIVideoView = new PLVideoView(context);
-                Toast.makeText(context, "PLVideoView", Toast.LENGTH_SHORT).show();
+                mIVideoView = new IJKVideoView(context);
+                Toast.makeText(context, "IJKVideoView", Toast.LENGTH_SHORT).show();
                 break;
             case TYPE_ML:
                 mIVideoView = new MVideoView(context);
                 Toast.makeText(context, "MVideoView", Toast.LENGTH_SHORT).show();
                 break;
             case TYPE_EXO:
-                mIVideoView = new ExoVideoView(context);
+//                mIVideoView = new ExoVideoView(context);
                 Toast.makeText(context, "ExoVideoView", Toast.LENGTH_SHORT).show();
         }
         LayoutParams layoutParams = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);

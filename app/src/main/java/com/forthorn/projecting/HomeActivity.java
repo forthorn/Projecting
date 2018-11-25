@@ -16,6 +16,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.view.View;
@@ -141,6 +142,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private List<Integer> mTaskIdList = new ArrayList<>();
 
     private Map<Integer, Integer> mTaskIds = new HashMap<>();
+    private SparseArray<Task> mTaskSparseArray = new SparseArray<>();
+    private static final int LOGIN_TIME = 3600000;
+
 
     //是否是在执行插播的任务
     private boolean mInterCutting;
@@ -163,9 +167,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         queryTask();
         querySchedule();
         //每十分钟登录一下
-        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000);
+//        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000);
+//        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, LOGIN_TIME);
         setRequestAlarm();
     }
+
 
     @Override
     protected void onStop() {
@@ -280,7 +286,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 case HANDLER_MESSAGE_TIMING_LOGIN:
                     //Toast.makeText(mContext, "每十分钟登录一次", //Toast.LENGTH_SHORT).show();
                     requestIMAccount();
-                    mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000L);
+//                    mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000L);
+//                    mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, LOGIN_TIME);
                     break;
                 case HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT:
                     requestIMAccount();
@@ -371,7 +378,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void initPlayer() {
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        mVideoView.setUp(this, VideoView.TYPE_EXO);
+        mVideoView.setUp(this, VideoView.TYPE_VLC);
     }
 
     private void initIM() {
@@ -1059,9 +1066,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      */
     private void addAlarmTask(Task task) {
 //            已经添加并正在执行的任务不再添加闹钟
+        for (Integer key : mTaskIds.keySet()) {
+            LogUtils.e("addAlarmTask", "遍历已经存在的任务：" + key + ", value:" + mTaskIds.get(key));
+        }
+        LogUtils.e("addAlarmTask", "添加任务判断：" + task.getId());
         if (Integer.valueOf(task.getId()).equals((Integer) mTaskIds.get(task.getType()))) {
+//        if (task.getId() == mTaskIds.get(task.getType())) {
             return;
         }
+        mHandler.removeMessages(task.getId());
         android.os.Message message = mHandler.obtainMessage();
         message.what = task.getId();
         message.arg1 = HANDLER_MESSAGE_START_ALARM;
