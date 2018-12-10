@@ -3,7 +3,10 @@ package com.forthorn.projecting.downloader;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.forthorn.projecting.BuildConfig;
+import com.forthorn.projecting.app.AppApplication;
 import com.forthorn.projecting.app.AppConstant;
 import com.forthorn.projecting.db.DBUtils;
 import com.forthorn.projecting.entity.Download;
@@ -49,7 +52,7 @@ public class Downloader {
             LogUtils.e("CancelD", "播放时间距离现在小于5分钟，不进行下载");
             return;
         }
-        String dir = checkDiskSpaceAndDir();
+        final String dir = checkDiskSpaceAndDir();
         Download download = new Download();
         String fileName = MD5Util.getMD5Str(task.getContent());
         download.setId(task.getId());
@@ -63,6 +66,7 @@ public class Downloader {
         if (FileDownloader.getImpl().isServiceConnected()) {
             FileDownloader.getImpl().setMaxNetworkThreadCount(1);
         }
+        LogUtils.e("下载开始：", download.toString());
         FileDownloader.getImpl().create(task.getContent())
                 .setPath(dir + File.separator + fileName, false)
                 .setTag(new Integer(task.getId()))
@@ -81,6 +85,10 @@ public class Downloader {
                         download.setStatus(AppConstant.DOWNLOAD_STATUS_COMPLETE);
                         DBUtils.getInstance().updateDownload(download);
                         LogUtils.e("下载完成：", download.toString());
+                        if (BuildConfig.DEBUG) {
+                            Toast.makeText(AppApplication.getApplication(),
+                                    "下载完成\n下载任务Id:" + download.getId() + "\n下载链接:" + download.getUrl(), Toast.LENGTH_SHORT).show();
+                        }
                     }
 
                     @Override
@@ -93,6 +101,10 @@ public class Downloader {
                         }
                         download.setStatus(AppConstant.DOWNLOAD_STATUS_DOWNLOADING);
                         DBUtils.getInstance().updateDownload(download);
+                        if (BuildConfig.DEBUG) {
+                            Toast.makeText(AppApplication.getApplication(),
+                                    "尝试下载开始\n下载任务Id:" + download.getId() + "\n下载链接:" + download.getUrl(), Toast.LENGTH_SHORT).show();
+                        }
                         LogUtils.e("下载开始：", download.toString());
                     }
                 }).start();

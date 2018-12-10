@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.PowerManager;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.Display;
@@ -25,6 +26,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.forthorn.projecting.api.Api;
@@ -328,7 +330,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         if (mDeviceId == 0) {
             return;
         }
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm");
+        //登录IM
+        login();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
+        if (BuildConfig.DEBUG) {
+            Toast.makeText(mContext, "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务",
+                    Toast.LENGTH_SHORT).show();
+
+        }
         LogUtils.e("request", "请求：" + sdf.format(new Date(timeStamp * 1000L)) + "的任务");
         //Toast.makeText(mContext, "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务", //Toast.LENGTH_SHORT).show();
         Call<TaskRes> taskResCall = Api.getDefault(HostType.VOM_HOST).getTaskList(Api.getCacheControl(),
@@ -493,6 +502,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void login() {
         mIMUsername = SPUtils.getSharedStringData(mContext, BundleKey.IM_ACCOUNT);
         mIMPassword = SPUtils.getSharedStringData(mContext, BundleKey.IM_PASSWORD);
+        if (TextUtils.isEmpty(mIMUsername) || TextUtils.isEmpty(mIMPassword)) {
+            return;
+        }
         BasicCallback callback = new BasicCallback() {
             @Override
             public void gotResult(int i, String s) {
@@ -725,6 +737,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * @param task
      */
     private void handleIntercutVideo(Task task) {
+
+
         //1表示取消，0/2表示新增或者更新
         if (task.getStatus() == 1) {
             mVideoView.pause();
@@ -1085,6 +1099,27 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         LogUtils.e("addAlarmTask", "DelayTime:" + time + "___ID:" + task.getId());
         mHandler.sendMessageDelayed(message, time);
         LogUtils.e("addAlarmTask", "Task时间：" + task.getStart_time() * 1000L);
+        if (BuildConfig.DEBUG) {
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
+            String type = "";
+            switch (task.getType()) {
+                case AppConstant.TASK_TYPE_PICTURE:
+                    type = "图片";
+                    break;
+                case AppConstant.TASK_TYPE_TEXT:
+                    type = "文字";
+                    break;
+                case AppConstant.TASK_TYPE_VIDEO:
+                    type = "视频";
+                    break;
+                case AppConstant.TASK_TYPE_WEATHER:
+                    type = "天气";
+                    break;
+            }
+            Toast.makeText(mContext, "添加" + type + "任务结束闹钟\n任务Id:" + task.getId() + "\n开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
+                            "\n结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)),
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 
 
@@ -1693,7 +1728,26 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
         LogUtils.e("executeTask", task.toString());
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
-        //Toast.makeText(mContext, "执行：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), //Toast.LENGTH_SHORT).show();
+        if (BuildConfig.DEBUG) {
+            String type = "";
+            switch (task.getType()) {
+                case AppConstant.TASK_TYPE_PICTURE:
+                    type = "图片";
+                    break;
+                case AppConstant.TASK_TYPE_TEXT:
+                    type = "文字";
+                    break;
+                case AppConstant.TASK_TYPE_VIDEO:
+                    type = "视频";
+                    break;
+                case AppConstant.TASK_TYPE_WEATHER:
+                    type = "天气";
+                    break;
+            }
+            Toast.makeText(mContext, "执行" + type + "任务\n任务Id:" + task.getId() + "\n开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
+                            "\n结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)),
+                    Toast.LENGTH_LONG).show();
+        }
         switch (task.getType()) {
             case AppConstant.TASK_TYPE_PICTURE:
                 //插播广告过程中，不执行，直接设置结束的任务
@@ -1814,6 +1868,26 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         } catch (Exception e) {
         }
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
+        if (BuildConfig.DEBUG) {
+            String type = "";
+            switch (task.getType()) {
+                case AppConstant.TASK_TYPE_PICTURE:
+                    type = "图片";
+                    break;
+                case AppConstant.TASK_TYPE_TEXT:
+                    type = "文字";
+                    break;
+                case AppConstant.TASK_TYPE_VIDEO:
+                    type = "视频";
+                    break;
+                case AppConstant.TASK_TYPE_WEATHER:
+                    type = "天气";
+                    break;
+            }
+            Toast.makeText(mContext, "结束" + type + "任务\n任务Id:" + task.getId() + "\n开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
+                            "\n结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)),
+                    Toast.LENGTH_LONG).show();
+        }
         //Toast.makeText(mContext, "结束：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), //Toast.LENGTH_SHORT).show();
         task.setRunningStatus(AppConstant.TASK_RUNNING_STATUS_FINISH);
         DBUtils.getInstance().updateTask(task);
