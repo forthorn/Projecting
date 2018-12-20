@@ -22,4 +22,14 @@
         layout="@layout/layout_text"
         android:visibility="invisible"/>
 
+    <com.forthorn.projecting.widget.LogView
+        android:id="@+id/log_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="8dp"
+        android:paddingTop="8dp"
+        android:paddingRight="8dp"
+        android:paddingBottom="8dp"
+        tools:layout_height="48dp">
+    </com.forthorn.projecting.widget.LogView>
 </FrameLayout>

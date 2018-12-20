@@ -55,12 +55,12 @@ import com.forthorn.projecting.util.SPUtils;
 import com.forthorn.projecting.video.IVideoListener;
 import com.forthorn.projecting.video.VideoView;
 import com.forthorn.projecting.widget.AutoScrollTextView;
+import com.forthorn.projecting.widget.LogView;
 import com.forthorn.projecting.widget.NoticeDialog;
 import com.xboot.stdcall.PowerUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -114,6 +114,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private LinearLayout mTextTvLl;
     private AutoScrollTextView mTextTv;
     private LinearLayout mTextServerHolderLl;
+    //log
+    private LogView mLogView;
 
     private Context mContext;
     private List<String> mPicList = new ArrayList<>();
@@ -145,7 +147,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     private Map<Integer, Integer> mTaskIds = new HashMap<>();
     private SparseArray<Task> mTaskSparseArray = new SparseArray<>();
-    private static final int LOGIN_TIME = 3600000;
+    private static final int LOGIN_TIME = 1800000;
 
 
     //是否是在执行插播的任务
@@ -333,9 +335,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         //登录IM
         login();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
-        if (BuildConfig.DEBUG) {
-            Toast.makeText(mContext, "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务",
+        if (BuildConfig.DEBUG || true) {
+            String log = "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务";
+            Toast.makeText(mContext, log,
                     Toast.LENGTH_SHORT).show();
+            mLogView.append(log);
 
         }
         LogUtils.e("request", "请求：" + sdf.format(new Date(timeStamp * 1000L)) + "的任务");
@@ -418,6 +422,10 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mTextTv = (AutoScrollTextView) findViewById(R.id.text_tv);
         mTextServerHolderLl = (LinearLayout) findViewById(R.id.text_server_holder_ll);
         mIdleAboutIv.setOnClickListener(this);
+
+        //Log
+        mLogView = (LogView) findViewById(R.id.log_view);
+        mLogView.setVisibility(BuildConfig.DEBUG || true ? View.VISIBLE : View.GONE);
     }
 
     private void initData() {
@@ -972,8 +980,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 //            Toast.makeText(mContext, "开关机时间:下一次关机：" + simpleDateFormat.format(latestOff)
 //                    + "后下一次开机：" + simpleDateFormat.format(latestOn) + "后", Toast.LENGTH_LONG).show();
-            Log.e("开关机时间", "开关机时间:下一次关机：" + latestOff + "__" + simpleDateFormat.format(latestOff)
-                    + "后下一次开机：" + latestOn + "__" + simpleDateFormat.format(latestOn) + "后");
+            String log = "开关机时间:下一次关机：" + latestOff + "__" + simpleDateFormat.format(latestOff)
+                    + "后下一次开机：" + latestOn + "__" + simpleDateFormat.format(latestOn) + "后";
+            LogUtils.e("开关机时间", log);
+            if (BuildConfig.DEBUG || true) {
+                mLogView.append(log);
+            }
             PowerUtils.setPowerOnOff(latestOff, latestOn);
         }
     }
@@ -1099,8 +1111,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         LogUtils.e("addAlarmTask", "DelayTime:" + time + "___ID:" + task.getId());
         mHandler.sendMessageDelayed(message, time);
         LogUtils.e("addAlarmTask", "Task时间：" + task.getStart_time() * 1000L);
-        if (BuildConfig.DEBUG) {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
+        if (BuildConfig.DEBUG || true) {
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
             String type = "";
             switch (task.getType()) {
                 case AppConstant.TASK_TYPE_PICTURE:
@@ -1119,6 +1131,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             Toast.makeText(mContext, "添加" + type + "任务结束闹钟\n任务Id:" + task.getId() + "\n开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
                             "\n结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)),
                     Toast.LENGTH_SHORT).show();
+            String str = "添加" + type + "任务结束闹钟,任务Id:" + task.getId() + ",开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
+                    ",结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L));
+            mLogView.append(str);
         }
     }
 
@@ -1158,6 +1173,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * 休眠
      */
     private void sleep() {
+        if (BuildConfig.DEBUG || true) {
+            mLogView.append("执行休眠任务，任务时间：" + simpleDateFormat.format(new Date()));
+        }
         Call<BaseResponse> sleepCall = Api.getDefault(HostType.VOM_HOST).setSleep(Api.getCacheControl(),
                 String.valueOf(mDeviceId), mDeviceCode);
         sleepCall.enqueue(new Callback<BaseResponse>() {
@@ -1193,6 +1211,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * 唤醒
      */
     private void wakeUp() {
+        if (BuildConfig.DEBUG || true) {
+            mLogView.append("执行唤醒任务，任务时间：" + simpleDateFormat.format(new Date()));
+        }
         KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
         KeyguardManager.KeyguardLock kl = km.newKeyguardLock("unLock");
         //解锁
@@ -1224,6 +1245,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * 调节音量
      */
     private void adjustVolume(Task task) {
+        if (BuildConfig.DEBUG || true) {
+            mLogView.append("执行调节音量任务，任务时间：" + simpleDateFormat.format(new Date()) + ",音量大小：" + task.getVolume());
+        }
         AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         audioManager.requestAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
             @Override
@@ -1404,12 +1428,18 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     }
 
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
+
     /**
      * 直接截图发送
      *
      * @param task
      */
     private void snapshot(Task task) {
+        if (BuildConfig.DEBUG || true) {
+            mLogView.append("执行截屏任务，任务时间：" + simpleDateFormat.format(new Date()));
+        }
+
         // TODO: 11/4/2017   需要验证视频
         //Toast.makeText(mContext, "当前状态：" + mStatus, //Toast.LENGTH_SHORT).show();
         mSnapFilePath = saveCurrentImage();
@@ -1727,8 +1757,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             mTaskIds.put(task.getType(), taskId);
         }
         LogUtils.e("executeTask", task.toString());
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
-        if (BuildConfig.DEBUG) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
+        if (BuildConfig.DEBUG || true) {
             String type = "";
             switch (task.getType()) {
                 case AppConstant.TASK_TYPE_PICTURE:
@@ -1744,9 +1774,13 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     type = "天气";
                     break;
             }
-            Toast.makeText(mContext, "执行" + type + "任务\n任务Id:" + task.getId() + "\n开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
-                            "\n结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)),
+            String log = "执行" + type + "任务\n任务Id:" + task.getId() + "\n开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
+                    "\n结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L));
+            Toast.makeText(mContext, log,
                     Toast.LENGTH_LONG).show();
+            String str = "执行" + type + "任务, 任务Id:" + task.getId() + ",开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
+                    ", 结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)) + ",任务内容：" + task.getContent();
+            mLogView.append(str);
         }
         switch (task.getType()) {
             case AppConstant.TASK_TYPE_PICTURE:
@@ -1867,8 +1901,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             LogUtils.e("移除任务", "Map移除任务,Size:" + mTaskIds.size());
         } catch (Exception e) {
         }
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
-        if (BuildConfig.DEBUG) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
+        if (BuildConfig.DEBUG || true) {
             String type = "";
             switch (task.getType()) {
                 case AppConstant.TASK_TYPE_PICTURE:
@@ -1887,6 +1921,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             Toast.makeText(mContext, "结束" + type + "任务\n任务Id:" + task.getId() + "\n开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
                             "\n结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)),
                     Toast.LENGTH_LONG).show();
+            String str = "结束" + type + "任务,任务Id:" + task.getId() + ",开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
+                    ",结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)) + ",任务内容：" + task.getContent();
+            mLogView.append(str);
         }
         //Toast.makeText(mContext, "结束：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)), //Toast.LENGTH_SHORT).show();
         task.setRunningStatus(AppConstant.TASK_RUNNING_STATUS_FINISH);
