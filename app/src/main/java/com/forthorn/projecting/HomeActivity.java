@@ -173,7 +173,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         //每十分钟登录一下
 //        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000);
 //        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, LOGIN_TIME);
-        setRequestAlarm();
+//        setRequestAlarm();
     }
 
 
@@ -277,6 +277,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
         LogUtils.e("Alarm", "下一个请求将在：" + sdf.format(new Date(nextTime)));
         LogUtils.e("Alarm", (nextTime - System.currentTimeMillis()) / 1000 + "秒后请求");
+        mHandler.removeMessages(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE);
         mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE, nextTime - System.currentTimeMillis());
     }
 
@@ -493,12 +494,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 updateStatus();
                 nextHourTimeStamp = getNextHourStamp();
                 requestTasks(nextHourTimeStamp - 3600L);
+                setRequestAlarm();
                 querySchedule();
             }
 
             @Override
             public void onFailure(Call<IMAccount> call, Throwable t) {
                 //Toast.makeText(mContext, t.getMessage(), //Toast.LENGTH_SHORT).show();
+                mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT, 60000);
                 login();
             }
         });
