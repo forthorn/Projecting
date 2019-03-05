@@ -29,8 +29,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.danikula.videocache.HttpProxyCacheServer;
 import com.forthorn.projecting.api.Api;
 import com.forthorn.projecting.api.HostType;
+import com.forthorn.projecting.app.AppApplication;
 import com.forthorn.projecting.app.AppConstant;
 import com.forthorn.projecting.app.BundleKey;
 import com.forthorn.projecting.app.DeviceUuidFactory;
@@ -154,10 +156,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private boolean mInterCutting;
     //插播的任务
     private Task mInterCuttingTask;
+    private HttpProxyCacheServer proxy;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        proxy = AppApplication.getProxy(this);
         mRxManager = new RxManager();
         mContext = HomeActivity.this;
         SQLiteStudioService.instance().start(mContext);
@@ -171,7 +175,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         queryTask();
         querySchedule();
         //每十分钟登录一下
-//        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000);
+        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000);
 //        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, LOGIN_TIME);
 //        setRequestAlarm();
     }
@@ -290,9 +294,10 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             switch (msg.what) {
                 case HANDLER_MESSAGE_TIMING_LOGIN:
                     //Toast.makeText(mContext, "每十分钟登录一次", //Toast.LENGTH_SHORT).show();
-                    requestIMAccount();
-//                    mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000L);
+//                    requestIMAccount();
+                    mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000L);
 //                    mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, LOGIN_TIME);
+                    doAfterLogin();
                     break;
                 case HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT:
                     requestIMAccount();
@@ -370,6 +375,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             @Override
             public void onFailure(Call<TaskRes> call, Throwable t) {
                 LogUtils.e("查询任务", "结果：" + t.getMessage());
+
             }
         });
     }
@@ -426,14 +432,18 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
         //Log
         mLogView = (LogView) findViewById(R.id.log_view);
-        mLogView.setVisibility(BuildConfig.DEBUG || true ? View.VISIBLE : View.GONE);
+//        mLogView.setVisibility(BuildConfig.DEBUG || true ? View.VISIBLE : View.GONE);
+        mLogView.setVisibility(View.VISIBLE);
     }
 
     private void initData() {
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
-        mUuid = uuidFactory.getDeviceUuid().toString();
+//        mUuid = uuidFactory.getDeviceUuid().toString();
 //        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
 //        mUuid = "bb46a94c-0169-3914-bd0c-8705b0ff8a22";
+//        mUuid = "bb46a94c-0169-3914-bd0c-8705b0ff8a22";
+//        mUuid = "12aa0a79-bd17-3b55-b07a-42e6b1d54bfd";
+        mUuid = "16d98032-36d7-3467-98f9-ee2086a6eb71";
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
@@ -490,12 +500,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 SPUtils.setSharedStringData(mContext, BundleKey.IM_PASSWORD, mIMPassword);
                 SPUtils.setSharedIntData(mContext, BundleKey.DEVICE_ID, mDeviceId);
                 SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mDeviceCode);
-                login();
-                updateStatus();
-                nextHourTimeStamp = getNextHourStamp();
-                requestTasks(nextHourTimeStamp - 3600L);
-                setRequestAlarm();
-                querySchedule();
+                doAfterLogin();
             }
 
             @Override
@@ -505,6 +510,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 login();
             }
         });
+    }
+
+    private void doAfterLogin() {
+        login();
+        updateStatus();
+        nextHourTimeStamp = getNextHourStamp();
+        requestTasks(nextHourTimeStamp - 3600L);
+        setRequestAlarm();
+        querySchedule();
     }
 
     /**
@@ -1035,6 +1049,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     private void handleTask(Task task) {
         LogUtils.e("handleTask", "开始处理任务");
+        if (task.getContent() != null && task.getContent().endsWith(".mp4")) {
+            task.setType(6);
+        }
         if (task.getFinish_time() < System.currentTimeMillis() / 1000L) {
             //Toast.makeText(mContext, "查询到任务id为" + task.getId() + "的任务已过期，自动跳过", //Toast.LENGTH_SHORT).show();
             return;
@@ -1382,8 +1399,13 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             //Toast.makeText(mContext, "播放缓存视频" + filePath, //Toast.LENGTH_SHORT).show();
         } else {
             filePath = task.getContent();
+            if (proxy != null) {
+                filePath = proxy.getProxyUrl(filePath);
+            }
             //Toast.makeText(mContext, "播放网络视频" + filePath, //Toast.LENGTH_SHORT).show();
         }
+//        filePath = "http://ahwyx.com/images/attachment/20190219/15505628629557.mp4";
+//        filePath = "http://180.163.159.6/huya-w6.huya.com/1816/28800281/yuanhua/845bcfe62ec9f58dda91bdf9614e7c5f.mp4";
         mVideoView.pause();
         mVideoView.stopPlayback();
         mVideoView.setVideoURI(Uri.parse(filePath));
@@ -2131,7 +2153,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     public void onCompletion() {
 //            Toast.makeText(mContext, "本次视频播放完成!", Toast.LENGTH_SHORT).show();
         if (mVideoView.getType() == VideoView.TYPE_VLC) {
-            //VLC播放器设定的是自动循环
+//            VLC播放器设定的是自动循环
             return;
         }
         //如果是插播的任务，则继续进行插播视频的播放，不需要停止

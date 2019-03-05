@@ -9,6 +9,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Environment;
 
+import com.danikula.videocache.HttpProxyCacheServer;
 import com.forthorn.projecting.BuildConfig;
 import com.forthorn.projecting.HomeActivity;
 import com.forthorn.projecting.R;
@@ -29,6 +30,8 @@ public class AppApplication extends Application implements Thread.UncaughtExcept
 
     private static AppApplication mAppApplication;
 
+    private HttpProxyCacheServer proxy;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -45,6 +48,7 @@ public class AppApplication extends Application implements Thread.UncaughtExcept
         Configuration config = new Configuration();
         config.setToDefaults();
         res.updateConfiguration(config, res.getDisplayMetrics());
+
     }
 
     public static AppApplication getApplication() {
@@ -81,5 +85,15 @@ public class AppApplication extends Application implements Thread.UncaughtExcept
         if (null != e && null != t) {
 //            restartApp();
         }
+    }
+
+    public static HttpProxyCacheServer getProxy(Context context) {
+        AppApplication app = (AppApplication) context.getApplicationContext();
+        return app.proxy == null ? (app.proxy = app.newProxy()) : app.proxy;
+    }
+
+    private HttpProxyCacheServer newProxy() {
+        return new HttpProxyCacheServer.Builder(this)
+                .maxCacheSize(1024 * 1024 * 1024).build();
     }
 }
