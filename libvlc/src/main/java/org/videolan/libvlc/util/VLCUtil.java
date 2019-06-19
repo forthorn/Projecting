@@ -139,7 +139,7 @@ public class VLCUtil {
                 } else if (line.contains("ARMv7")) {
                     hasArmV7 = true;
                     hasArmV6 = true; /* Armv7 is backwards compatible to < v6 */
-                    Toast.makeText(context, "ARMV7", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "ARMV7", Toast.LENGTH_SHORT).show();
                 } else if (line.contains("ARMv6"))
                     hasArmV6 = true;
                     // "clflush size" is a x86-specific cpuinfo tag.

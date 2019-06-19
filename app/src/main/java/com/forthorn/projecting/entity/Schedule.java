@@ -22,6 +22,8 @@ public class Schedule {
     private int code;
     private String msg;
     private List<ScheduleBean> data;
+    private List<ScheduleVolumeBean> volume_data;
+    private String default_volume;
 
     public int getCode() {
         return code;
@@ -45,6 +47,22 @@ public class Schedule {
 
     public void setData(List<ScheduleBean> data) {
         this.data = data;
+    }
+
+    public List<ScheduleVolumeBean> getVolume_data() {
+        return volume_data;
+    }
+
+    public void setVolume_data(List<ScheduleVolumeBean> volume_data) {
+        this.volume_data = volume_data;
+    }
+
+    public String getDefault_volume() {
+        return default_volume;
+    }
+
+    public void setDefault_volume(String default_volume) {
+        this.default_volume = default_volume;
     }
 
     public static class ScheduleBean {
@@ -96,4 +114,38 @@ public class Schedule {
             this.offDay = offDay;
         }
     }
+
+    public static class ScheduleVolumeBean {
+
+        @SerializedName("start_time")
+        private String startTime;
+        @SerializedName("end_time")
+        private String endTime;
+        private int value;
+
+        public String getStartTime() {
+            return startTime;
+        }
+
+        public void setStartTime(String startTime) {
+            this.startTime = startTime;
+        }
+
+        public String getEndTime() {
+            return endTime;
+        }
+
+        public void setEndTime(String endTime) {
+            this.endTime = endTime;
+        }
+
+        public int getValue() {
+            return value;
+        }
+
+        public void setValue(int value) {
+            this.value = value;
+        }
+    }
+
 }

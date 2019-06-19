@@ -44,28 +44,32 @@ public class Settings {
     }
 
     public int getPlayer() {
+        // TODO: 2019-05-28  写死
+        if (true) {
+            return 1;
+        }
         String key = mAppContext.getString(R.string.pref_key_player);
-        String value = mSharedPreferences.getString(key, "3");
+        String value = mSharedPreferences.getString(key, "1");
         try {
             return Integer.valueOf(value).intValue();
         } catch (NumberFormatException e) {
-            return 0;
+            return 1;
         }
     }
 
     public boolean getUsingMediaCodec() {
         String key = mAppContext.getString(R.string.pref_key_using_media_codec);
-        return mSharedPreferences.getBoolean(key, false);
+        return mSharedPreferences.getBoolean(key, true);
     }
 
     public boolean getUsingMediaCodecAutoRotate() {
         String key = mAppContext.getString(R.string.pref_key_using_media_codec_auto_rotate);
-        return mSharedPreferences.getBoolean(key, false);
+        return mSharedPreferences.getBoolean(key, true);
     }
 
     public boolean getMediaCodecHandleResolutionChange() {
         String key = mAppContext.getString(R.string.pref_key_media_codec_handle_resolution_change);
-        return mSharedPreferences.getBoolean(key, false);
+        return mSharedPreferences.getBoolean(key, true);
     }
 
     public boolean getUsingOpenSLES() {

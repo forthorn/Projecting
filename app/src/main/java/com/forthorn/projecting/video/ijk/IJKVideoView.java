@@ -14,6 +14,7 @@ import com.forthorn.projecting.video.IVideoListener;
 import com.forthorn.projecting.video.IVideoView;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
+import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
 public class IJKVideoView extends FrameLayout implements IVideoView, IMediaPlayer.OnCompletionListener {
 

@@ -33,7 +33,9 @@ public class Task {
     private String content;
     private int runningStatus;
     private List<Schedule.ScheduleBean> list;
+    private List<Schedule.ScheduleVolumeBean> volume_data;
     private Extras extras;
+    private String default_volume;
     /**
      * volume : null
      * create_time : null
@@ -177,6 +179,22 @@ public class Task {
 
     public void setList(List<Schedule.ScheduleBean> list) {
         this.list = list;
+    }
+
+    public List<Schedule.ScheduleVolumeBean> getVolume_data() {
+        return volume_data;
+    }
+
+    public void setVolume_data(List<Schedule.ScheduleVolumeBean> volume_data) {
+        this.volume_data = volume_data;
+    }
+
+    public String getDefault_volume() {
+        return default_volume;
+    }
+
+    public void setDefault_volume(String default_volume) {
+        this.default_volume = default_volume;
     }
 
     public static class Extras {

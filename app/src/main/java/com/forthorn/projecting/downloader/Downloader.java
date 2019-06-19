@@ -86,8 +86,8 @@ public class Downloader {
                         DBUtils.getInstance().updateDownload(download);
                         LogUtils.e("下载完成：", download.toString());
                         if (BuildConfig.DEBUG) {
-                            Toast.makeText(AppApplication.getApplication(),
-                                    "下载完成\n下载任务Id:" + download.getId() + "\n下载链接:" + download.getUrl(), Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(AppApplication.getApplication(),
+//                                    "下载完成\n下载任务Id:" + download.getId() + "\n下载链接:" + download.getUrl(), Toast.LENGTH_SHORT).show();
                         }
                     }
 
@@ -102,8 +102,8 @@ public class Downloader {
                         download.setStatus(AppConstant.DOWNLOAD_STATUS_DOWNLOADING);
                         DBUtils.getInstance().updateDownload(download);
                         if (BuildConfig.DEBUG) {
-                            Toast.makeText(AppApplication.getApplication(),
-                                    "尝试下载开始\n下载任务Id:" + download.getId() + "\n下载链接:" + download.getUrl(), Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(AppApplication.getApplication(),
+//                                    "尝试下载开始\n下载任务Id:" + download.getId() + "\n下载链接:" + download.getUrl(), Toast.LENGTH_SHORT).show();
                         }
                         LogUtils.e("下载开始：", download.toString());
                     }

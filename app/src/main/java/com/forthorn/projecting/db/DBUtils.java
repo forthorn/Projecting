@@ -99,8 +99,9 @@ public class DBUtils {
     public Task findTask(int id) {
         db = dbHelper.getWritableDatabase();
         Cursor cursor = db.rawQuery("select * from TASK_TABLE where task_id =?", new String[]{String.valueOf(id)});
+        Task task = null;
         if (cursor.moveToNext()) {
-            Task task = new Task();
+            task = new Task();
             task.setId(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_ID)));
             task.setType(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_TYPE)));
             task.setEquip_id(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_DEVICE_ID)));
@@ -114,11 +115,10 @@ public class DBUtils {
             task.setContent(cursor.getString(cursor.getColumnIndex(DBHelper.TASK_CONTENT)));
             task.setStart_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_START_TIME)));
             task.setFinish_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_FINISH_TIME)));
-            db.close();
-            return task;
         }
+        cursor.close();
         db.close();
-        return null;
+        return task;
     }
 
     public List<Task> findAllTask() {
@@ -143,6 +143,7 @@ public class DBUtils {
             task.setFinish_time(cursor.getInt(cursor.getColumnIndex(DBHelper.TASK_FINISH_TIME)));
             tasks.add(task);
         }
+        cursor.close();
         return tasks;
     }
 
@@ -172,6 +173,7 @@ public class DBUtils {
                         new String[]{String.valueOf(task.getId())});
                 Log.e("删除过期Task", task.toString());
             }
+            cursor.close();
             db.setTransactionSuccessful();
         } catch (Exception e) {
         } finally {
@@ -212,6 +214,7 @@ public class DBUtils {
                     Log.e("查到暂停Task", task.toString());
                 }
             }
+            cursor.close();
             db.setTransactionSuccessful();
         } catch (Exception e) {
         } finally {
@@ -309,6 +312,7 @@ public class DBUtils {
             download.setFileSize(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_FILE_SIZE)));
             downloads.add(download);
         }
+        cursor.close();
         db.close();
         return downloads;
     }
@@ -367,6 +371,7 @@ public class DBUtils {
             download.setOffDay(cursor.getString(cursor.getColumnIndex(DBHelper.ONOFF_OFF_DAY)));
             schedule.add(download);
         }
+        cursor.close();
         db.close();
         return schedule;
     }

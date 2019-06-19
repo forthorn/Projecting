@@ -11,6 +11,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -21,6 +22,7 @@ import android.util.SparseArray;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -54,11 +56,13 @@ import com.forthorn.projecting.receiver.AlarmReceiver;
 import com.forthorn.projecting.util.GsonUtils;
 import com.forthorn.projecting.util.LogUtils;
 import com.forthorn.projecting.util.SPUtils;
+import com.forthorn.projecting.util.ToastUtil;
 import com.forthorn.projecting.video.IVideoListener;
 import com.forthorn.projecting.video.VideoView;
 import com.forthorn.projecting.widget.AutoScrollTextView;
 import com.forthorn.projecting.widget.LogView;
 import com.forthorn.projecting.widget.NoticeDialog;
+import com.juli.settimezone.cn.Mainforsettimezone;
 import com.xboot.stdcall.PowerUtils;
 
 import java.io.File;
@@ -94,6 +98,13 @@ import rx.functions.Action1;
 import static com.forthorn.projecting.app.Status.IDLE;
 
 
+/**
+ * 修改默认播放器：{@link com.forthorn.libijk.application.Settings#getPlayer}
+ * 修改UUID: {@link HomeActivity#initData()}
+ * 板子1 使用sign1
+ * 全志 使用 sign2
+ * 聚力 使用 sign3 瑞芯微
+ */
 public class HomeActivity extends Activity implements View.OnClickListener, AlarmReceiver.AlarmListener, IVideoListener {
     //视频
     private FrameLayout mVideoFl;
@@ -144,6 +155,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private static final int HANDLER_MESSAGE_START_ALARM = 0X5;
     private static final int HANDLER_MESSAGE_FINISH_ALARM = 0X6;
 
+    private static final int HANDLER_MESSAGE_VOLUME_START = 0X6;
+    private static final int HANDLER_MESSAGE_VOLUME_END = 0X7;
+
     private long nextHourTimeStamp = 0L;
     private List<Integer> mTaskIdList = new ArrayList<>();
 
@@ -158,12 +172,25 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private Task mInterCuttingTask;
     private HttpProxyCacheServer proxy;
 
+    //品牌
+    private String mBrand = Build.BRAND;
+
+    public static final String BRAND_ONE = "Allwinner";
+    public static final String BRAND_QUANZHI = "softwinners";
+    public static final String BRAND_ROCKCHIP = "rockchip";
+
+    private Mainforsettimezone mMainforsettimezone;
+
+    private int default_volume = -1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         proxy = AppApplication.getProxy(this);
         mRxManager = new RxManager();
         mContext = HomeActivity.this;
+        mMainforsettimezone = new Mainforsettimezone(this);
+        sendBroadcast(new Intent().setAction("android.action.juli.HIDE_STATUSBAR"));
         SQLiteStudioService.instance().start(mContext);
         setContentView(R.layout.activity_home);
         initView();
@@ -188,6 +215,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     @Override
     protected void onDestroy() {
+        sendBroadcast(new Intent().setAction("android.action.juli.DISPLAY_STATUSBAR"));
         mVideoView.stopPlayback();
         mHandler.removeCallbacksAndMessages(null);
         SQLiteStudioService.instance().stop();
@@ -206,11 +234,17 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             @Override
             public void onResponse(Call<Schedule> call, Response<Schedule> response) {
                 Schedule schedule = response.body();
-                if (schedule == null || schedule.getData() == null) {
+                if (schedule == null) {
                     return;
                 }
-                DBUtils.getInstance().updateSchedule(schedule.getData());
-                handleOnOff(schedule.getData());
+                if (schedule.getData() != null) {
+                    DBUtils.getInstance().updateSchedule(schedule.getData());
+                    handleOnOff(schedule.getData());
+                }
+                if (!TextUtils.isEmpty(schedule.getDefault_volume())) {
+                    default_volume = Integer.parseInt(schedule.getDefault_volume());
+                }
+                handleScheduleVolume(schedule.getVolume_data());
             }
 
             @Override
@@ -218,6 +252,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             }
         });
     }
+
 
     private void updateStatus() {
         if (mDeviceId != 0) {
@@ -256,7 +291,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
 
     private long getNextHourStamp() {
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+8:00"));
         int hour = cal.get(Calendar.HOUR_OF_DAY);
         cal.set(Calendar.HOUR_OF_DAY, hour + 1);
         cal.set(Calendar.MINUTE, 0);
@@ -295,6 +330,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 case HANDLER_MESSAGE_TIMING_LOGIN:
                     //Toast.makeText(mContext, "每十分钟登录一次", //Toast.LENGTH_SHORT).show();
 //                    requestIMAccount();
+                    mHandler.removeMessages(HANDLER_MESSAGE_TIMING_LOGIN);
                     mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000L);
 //                    mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, LOGIN_TIME);
                     doAfterLogin();
@@ -308,9 +344,24 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     requestTasks(nextHourTimeStamp);
                     mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE, 3600000L);
                     break;
+                case HANDLER_MESSAGE_VOLUME_START:
+                    //设置音量
+                    // TODO: 2019-06-15
+                    int volume = msg.arg1;
+                    adjustScheduleVolume(volume);
+                    break;
+                case HANDLER_MESSAGE_VOLUME_END:
+                    //还原音量
+                    if (default_volume != -1) {
+                        adjustScheduleVolume(default_volume);
+                    }
+                    break;
             }
-            if (msg.what != HANDLER_MESSAGE_TIMING_LOGIN && msg.what != HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT
-                    && msg.what != HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE) {
+            if (msg.what != HANDLER_MESSAGE_TIMING_LOGIN
+                    && msg.what != HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT
+                    && msg.what != HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE
+                    && msg.what != HANDLER_MESSAGE_VOLUME_START
+                    && msg.what != HANDLER_MESSAGE_VOLUME_END) {
                 int taskId = msg.what;
                 LogUtils.e("任务消息", "taskID=" + taskId);
                 int type = msg.arg1;
@@ -341,12 +392,10 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         //登录IM
         login();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
-        if (BuildConfig.DEBUG || true) {
+        if (Config.DEBUG) {
             String log = "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务";
-            Toast.makeText(mContext, log,
-                    Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, log, Toast.LENGTH_SHORT).show();
             mLogView.append(log);
-
         }
         LogUtils.e("request", "请求：" + sdf.format(new Date(timeStamp * 1000L)) + "的任务");
         //Toast.makeText(mContext, "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务", //Toast.LENGTH_SHORT).show();
@@ -407,6 +456,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     }
 
     private void initView() {
+        Window _window = getWindow();
+        WindowManager.LayoutParams params = _window.getAttributes();
+        params.systemUiVisibility = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+        _window.setAttributes(params);
+
         //视频
         mVideoFl = (FrameLayout) findViewById(R.id.video_fl);
         mVideoView = (VideoView) findViewById(R.id.video_view);
@@ -433,17 +487,20 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         //Log
         mLogView = (LogView) findViewById(R.id.log_view);
 //        mLogView.setVisibility(BuildConfig.DEBUG || true ? View.VISIBLE : View.GONE);
-        mLogView.setVisibility(View.VISIBLE);
+        mLogView.setVisibility(Config.DEBUG ? View.VISIBLE : View.GONE);
     }
 
     private void initData() {
         DeviceUuidFactory uuidFactory = new DeviceUuidFactory(mContext);
-//        mUuid = uuidFactory.getDeviceUuid().toString();
+        mUuid = uuidFactory.getDeviceUuid().toString();
 //        mUuid = "c3d30ab2-1139-300a-830f-bc4e6900c015";
 //        mUuid = "bb46a94c-0169-3914-bd0c-8705b0ff8a22";
 //        mUuid = "bb46a94c-0169-3914-bd0c-8705b0ff8a22";
 //        mUuid = "12aa0a79-bd17-3b55-b07a-42e6b1d54bfd";
-        mUuid = "16d98032-36d7-3467-98f9-ee2086a6eb71";
+//        mUuid = "16d98032-36d7-3467-98f9-ee2086a6eb71";
+//        mUuid = "81292800-f23c-3ff9-bab2-469732b4d806";
+//        mUuid = "a37a8a78-b8fb-3e09-8295-405983d8069c";
+//        mUuid = "c12280f4-d12c-3fdf-be79-583585244580"; 聚力
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
@@ -540,11 +597,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                         public void gotResult(int i, String s, Integer integer) {
                         }
                     });
-                    //ToastUtil.short//Toast(mContext, "登陆成功" + myInfo.getUserName());
+                    if (Config.DEBUG) {
+                        ToastUtil.shortToast(mContext, "登陆成功" + myInfo.getUserName());
+                    }
                     mIdleServerStatusTv.setText("在线");
                     mIdleServerStatusTv.setEnabled(true);
                 } else {
-                    //ToastUtil.short//Toast(mContext, "Code:" + i + "   Reason:" + s);
+                    if (Config.DEBUG) {
+                        ToastUtil.shortToast(mContext, "离线：Code:" + i + "   Reason:" + s);
+                    }
                     mIdleServerStatusTv.setText("离线");
                     mIdleServerStatusTv.setEnabled(false);
                 }
@@ -689,11 +750,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      */
     public void onEventMainThread(MessageEvent event) {
         Message msg = event.getMessage();
-        Log.d("MessageEvent", "收到消息：" + msg.getFromUser().getUserName());
+//        Log.d("MessageEvent", "收到消息：" + msg.getFromUser().getUserName());
         switch (msg.getContentType()) {
             case text:  //处理文字消息
                 TextContent textContent = (TextContent) msg.getContent();
-                Log.d("MessageEvent", "消息：" + textContent.getText());
+//                Log.d("MessageEvent", "消息：" + textContent.getText());
                 handMessageEvent(textContent.getText());
                 break;
             case image:
@@ -702,13 +763,19 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 break;
             case custom:
                 CustomContent customContent = (CustomContent) msg.getContent();
+                if (Config.DEBUG) {
+                    Log.e("CustomMessage", ":" + customContent.toString());
+                    mLogView.append("接收到推送消息:" + customContent.toJson());
+                }
                 Task task = GsonUtils.convertObj(customContent.toJson(), Task.class);
-                LogUtils.e("CustomContent", customContent.toJson());
+//                LogUtils.e("CustomContent", customContent.toJson());
                 if (task == null) {
-                    //Toast.makeText(mContext, "消息格式错误", //Toast.LENGTH_SHORT).show();
+                    if (Config.DEBUG) {
+                        Toast.makeText(mContext, "消息格式错误", Toast.LENGTH_SHORT).show();
+                    }
                     return;
                 }
-                LogUtils.e("taskMessage", task.toString());
+//                LogUtils.e("taskMessage", task.toString());
                 handMessageEvent(task);
                 break;
             case eventNotification:
@@ -751,8 +818,117 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             case AppConstant.TASK_TYPE_INTERCUT_VIDEO:
                 handleIntercutVideo(task);
                 break;
+            case AppConstant.TASK_TYPE_SCHEDULE_VOLUME:
+                handleScheduleVolumeTask(task);
+                break;
             default:
                 break;
+        }
+    }
+
+
+    /**
+     * 处理定时音量任务
+     *
+     * @param task
+     */
+    private void handleScheduleVolumeTask(Task task) {
+        if (task == null) {
+            return;
+        }
+        if (!TextUtils.isEmpty(task.getDefault_volume())) {
+            default_volume = Integer.parseInt(task.getDefault_volume());
+        }
+        List<Schedule.ScheduleVolumeBean> volume_data = task.getVolume_data();
+        handleScheduleVolume(volume_data);
+    }
+
+    /**
+     * 处理定时音量任务
+     *
+     * @param
+     * @param volume_data
+     */
+    private void handleScheduleVolume(List<Schedule.ScheduleVolumeBean> volume_data) {
+        // TODO: 2019-06-15  定时音量任务
+        //清空定时音量消息
+        mHandler.removeMessages(HANDLER_MESSAGE_VOLUME_START);
+        mHandler.removeMessages(HANDLER_MESSAGE_VOLUME_END);
+        if (volume_data == null || volume_data.isEmpty()) {
+            return;
+        }
+        //重新设置值，从数据中取值
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8"));
+        calendar.setTime(new Date());
+        int size = volume_data.size();
+        //处理数据
+        long[] starts = new long[size];
+        long[] ends = new long[size];
+        long now = System.currentTimeMillis();
+        for (int i = 0; i < volume_data.size(); i++) {
+            Schedule.ScheduleVolumeBean volumeBean = volume_data.get(i);
+            String[] startTimes = volumeBean.getStartTime().split(":");
+            String[] endTimes = volumeBean.getEndTime().split(":");
+            if (startTimes.length != 2) {
+                break;
+            }
+            if (endTimes.length != 2) {
+                break;
+            }
+            int startHour = Integer.parseInt(startTimes[0]);
+            int startMin = Integer.parseInt(startTimes[1]);
+            calendar.set(Calendar.HOUR_OF_DAY, startHour);
+            calendar.set(Calendar.MINUTE, startMin);
+            calendar.set(Calendar.SECOND, 0);
+            long startTime = calendar.getTimeInMillis();
+            int endHour = Integer.parseInt(endTimes[0]);
+            int endMin = Integer.parseInt(endTimes[1]);
+            calendar.set(Calendar.HOUR_OF_DAY, endHour);
+            calendar.set(Calendar.MINUTE, endMin);
+            calendar.set(Calendar.SECOND, 0);
+            long endTime = calendar.getTimeInMillis();
+            //如果结束时间小于现在，则需要往后推一天
+            if (endTime < now) {
+                startTime = startTime + 24 * 60 * 60 * 1000;
+                endTime = endTime + 24 * 60 * 60 * 1000;
+            }
+            starts[i] = startTime;
+            ends[i] = endTime;
+        }
+        //这时候拿到的数组里面的数据都是处理过的数据，从开始时间中取其中最小的数据
+        int index = 0;
+        for (int i = 0; i < starts.length; i++) {
+            if (starts[i] < starts[index]) {
+                index = i;
+            }
+        }
+        //如果这个最小值结束时间还小于当前时间，说明时间数据有问题，不设置了
+        if (ends[index] < now) {
+            return;
+        }
+        //拿到了最小的时间的值，设置该值
+        Schedule.ScheduleVolumeBean volume = volume_data.get(index);
+        //发送定时音量开启消息
+        android.os.Message message = mHandler.obtainMessage();
+        message.what = HANDLER_MESSAGE_VOLUME_START;
+        message.arg1 = volume.getValue();
+        long startDelay = starts[index] - now;
+        if (startDelay < 0) {
+            startDelay = 100;
+        }
+        mHandler.sendMessageDelayed(message, startDelay);
+        //发送定时音量关闭消息
+        android.os.Message message2 = mHandler.obtainMessage();
+        message2.what = HANDLER_MESSAGE_VOLUME_END;
+        mHandler.sendMessageDelayed(message2, (ends[index] - now));
+        //重置时间
+        Calendar.getInstance().setTime(new Date());
+        // TODO: 2019-06-15  log出设置信息
+        if (Config.DEBUG) {
+            String log = "设置定时音量：音量：" + volume.getValue() + ", 开始时间：" + simpleDateFormat.format(new Date(starts[index]))
+                    + ", 结束时间：" + simpleDateFormat.format(new Date(ends[index])) + ",恢复成音量：" + default_volume;
+            mLogView.append(log);
+            Log.e("ScheduleVolume", log);
         }
     }
 
@@ -762,8 +938,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * @param task
      */
     private void handleIntercutVideo(Task task) {
-
-
         //1表示取消，0/2表示新增或者更新
         if (task.getStatus() == 1) {
             mVideoView.pause();
@@ -777,7 +951,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             //重置一切状态
             mHandler.removeCallbacksAndMessages(null);
             mTaskIds.clear();
-            queryTask();
+            //重新进行任务查询
+//            queryTask();
+            // TODO: 2019-05-22  停止插播，然后需要重新请求任务
+            doAfterLogin();
+            mHandler.removeMessages(HANDLER_MESSAGE_TIMING_LOGIN);
+            mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000L);
             mVideoView.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -809,8 +988,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * @param task 开关机任务
      */
     private void handleOnOffTask(Task task) {
+//        Toast.makeText(mContext, "task:" + task.getList().size(), Toast.LENGTH_SHORT).show();
         //先取消原有的定时开关
-        PowerUtils.cancelPowerOnOff();
+        PowerUtils.cancelPowerOnOff(mContext, mBrand, mMainforsettimezone);
         List<Schedule.ScheduleBean> scheduleList = task.getList();
         if (scheduleList != null) {
             DBUtils.getInstance().updateSchedule(scheduleList);
@@ -837,21 +1017,19 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * @param list
      */
     public void handleOnOff(List<Schedule.ScheduleBean> list) {
-        if (list == null) {
+        if (list == null || list.isEmpty()) {
+            PowerUtils.cancelPowerOnOff(mContext, mBrand, mMainforsettimezone);
             return;
-        }
-        if (list.isEmpty()) {
-            PowerUtils.cancelPowerOnOff();
         }
         //day -0 星期天，1-星期一，。。。。
         long latestOff = 0L;
         long latestOn = 0L;
         //当前的时
-        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        int hour = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")).get(Calendar.HOUR_OF_DAY);
         //当前的分
-        int min = Calendar.getInstance().get(Calendar.MINUTE);
+        int min = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")).get(Calendar.MINUTE);
         //当前周几
-        int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
+        int day = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")).get(Calendar.DAY_OF_WEEK);
 
         for (Schedule.ScheduleBean scheduleBean : list) {
             String[] offTimes = scheduleBean.getOffTime().split(":");
@@ -991,19 +1169,21 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             }
         }
         // 再次取消所设定的开关机
-        PowerUtils.cancelPowerOnOff();
+        PowerUtils.cancelPowerOnOff(mContext, mBrand, mMainforsettimezone);
         //开关机时间都 不为0
         if (latestOff != 0L && latestOn != 0L) {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-//            Toast.makeText(mContext, "开关机时间:下一次关机：" + simpleDateFormat.format(latestOff)
-//                    + "后下一次开机：" + simpleDateFormat.format(latestOn) + "后", Toast.LENGTH_LONG).show();
+            if (Config.DEBUG) {
+                Toast.makeText(mContext, "开关机时间:下一次关机：" + simpleDateFormat.format(latestOff)
+                        + "后下一次开机：" + simpleDateFormat.format(latestOn) + "后", Toast.LENGTH_LONG).show();
+            }
             String log = "开关机时间:下一次关机：" + latestOff + "__" + simpleDateFormat.format(latestOff)
                     + "后下一次开机：" + latestOn + "__" + simpleDateFormat.format(latestOn) + "后";
             LogUtils.e("开关机时间", log);
-            if (BuildConfig.DEBUG || true) {
+            if (Config.DEBUG) {
                 mLogView.append(log);
             }
-            PowerUtils.setPowerOnOff(latestOff, latestOn);
+            PowerUtils.setPowerOnOff(mContext, mBrand, latestOff, latestOn, mMainforsettimezone);
         }
     }
 
@@ -1035,6 +1215,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         } else if (offset > 0) {       //大于0 ，说明是本周
             offsetTime = calendar.getTimeInMillis() + Math.abs(offset) * 24L * 60L * 60L * 1000L;
         }
+        calendar.setTime(new Date());
         return offsetTime;
     }
 
@@ -1117,7 +1298,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
         LogUtils.e("addAlarmTask", "添加任务判断：" + task.getId());
         if (Integer.valueOf(task.getId()).equals((Integer) mTaskIds.get(task.getType()))) {
-//        if (task.getId() == mTaskIds.get(task.getType())) {
             return;
         }
         mHandler.removeMessages(task.getId());
@@ -1131,7 +1311,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         LogUtils.e("addAlarmTask", "DelayTime:" + time + "___ID:" + task.getId());
         mHandler.sendMessageDelayed(message, time);
         LogUtils.e("addAlarmTask", "Task时间：" + task.getStart_time() * 1000L);
-        if (BuildConfig.DEBUG || true) {
+        if (Config.DEBUG) {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
             String type = "";
             switch (task.getType()) {
@@ -1148,9 +1328,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     type = "天气";
                     break;
             }
-            Toast.makeText(mContext, "添加" + type + "任务结束闹钟\n任务Id:" + task.getId() + "\n开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
-                            "\n结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)),
-                    Toast.LENGTH_SHORT).show();
+//            Toast.makeText(mContext, "添加" + type + "任务结束闹钟\n任务Id:" + task.getId() + "\n开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
+//                            "\n结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)),
+//                    Toast.LENGTH_SHORT).show();
             String str = "添加" + type + "任务结束闹钟,任务Id:" + task.getId() + ",开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
                     ",结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L));
             mLogView.append(str);
@@ -1193,7 +1373,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * 休眠
      */
     private void sleep() {
-        if (BuildConfig.DEBUG || true) {
+        if (Config.DEBUG) {
             mLogView.append("执行休眠任务，任务时间：" + simpleDateFormat.format(new Date()));
         }
         Call<BaseResponse> sleepCall = Api.getDefault(HostType.VOM_HOST).setSleep(Api.getCacheControl(),
@@ -1210,6 +1390,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             }
         });
         pauseTask();
+        if (BRAND_QUANZHI.equals(mBrand)) {
+            Intent intent = new Intent("android.intent.action.pubds_sleep");
+            sendBroadcast(intent);
+        } else if (BRAND_ROCKCHIP.equals(mBrand)) {
+
+        } else {
+
+        }
     }
 
     /**
@@ -1224,14 +1412,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * 唤醒后继续任务
      */
     private void resumeTask() {
-        queryTask();
+//        queryTask();
+        doAfterLogin();
     }
 
     /**
      * 唤醒
      */
     private void wakeUp() {
-        if (BuildConfig.DEBUG || true) {
+        if (Config.DEBUG) {
             mLogView.append("执行唤醒任务，任务时间：" + simpleDateFormat.format(new Date()));
         }
         KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
@@ -1259,13 +1448,23 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             }
         });
         resumeTask();
+        // TODO: 2019-05-23  根据品牌进行判断
+        if (BRAND_QUANZHI.equals(mBrand)) {
+            //重启之前需要先关闭看门狗服务
+            sendBroadcast(new Intent().setAction("android.intent.action.pubds_watchdogdisable"));
+            sendBroadcast(new Intent().setAction("android.intent.action.pubds_reboot"));
+        } else if (BRAND_ROCKCHIP.equals(mBrand)) {
+
+        } else {
+
+        }
     }
 
     /**
      * 调节音量
      */
     private void adjustVolume(Task task) {
-        if (BuildConfig.DEBUG || true) {
+        if (Config.DEBUG) {
             mLogView.append("执行调节音量任务，任务时间：" + simpleDateFormat.format(new Date()) + ",音量大小：" + task.getVolume());
         }
         AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -1276,6 +1475,53 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             }
         }, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
         int volume = task.getVolume();
+        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        int targetVolume = (int) Math.ceil(volume * maxVolume / 100D);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, 0);
+        int current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        audioManager.abandonAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int i) {
+            }
+        });
+        LogUtils.e("Volume", "Task:" + volume + "__Current:" + current + "__Target:" + targetVolume);
+        updateStatus();
+        Call<BaseResponse> volumeCall = Api.getDefault(HostType.VOM_HOST).setVolume(Api.getCacheControl(),
+                String.valueOf(mDeviceId), mDeviceCode, String.valueOf(volume));
+        volumeCall.enqueue(new Callback<BaseResponse>() {
+            @Override
+            public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
+                BaseResponse baseResponse = response.body();
+                LogUtils.e("adjustVolume", baseResponse.getMsg() == null ? "调节音量成功" : baseResponse.getMsg());
+            }
+
+            @Override
+            public void onFailure(Call<BaseResponse> call, Throwable t) {
+                LogUtils.e("adjustVolume", t.getMessage() == null ? "调节音量失败" : t.getMessage());
+            }
+        });
+    }
+
+    /**
+     * 调节音量
+     */
+    private void adjustScheduleVolume(int volume) {
+        if (volume < 0) {
+            volume = 0;
+        }
+        if (volume > 100) {
+            volume = 100;
+        }
+        if (Config.DEBUG) {
+            mLogView.append("执行调节音量任务，任务时间：" + simpleDateFormat.format(new Date()) + ",音量大小：" + volume);
+        }
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        audioManager.requestAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int i) {
+
+            }
+        }, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
         int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         int targetVolume = (int) Math.ceil(volume * maxVolume / 100D);
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, 0);
@@ -1381,6 +1627,13 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         } else if (text.startsWith("http")) {
 //            playVideo(text);
         } else {
+            Log.e("taskMessage", "Message: " + text);
+            Task task = GsonUtils.convertObj(text, Task.class);
+            if (task == null) {
+                return;
+            }
+            LogUtils.e("taskMessage", task.toString());
+            handMessageEvent(task);
             //ToastUtil.short//Toast(mContext, "无法识别的指令");
         }
     }
@@ -1461,7 +1714,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * @param task
      */
     private void snapshot(Task task) {
-        if (BuildConfig.DEBUG || true) {
+        if (Config.DEBUG) {
             mLogView.append("执行截屏任务，任务时间：" + simpleDateFormat.format(new Date()));
         }
 
@@ -1783,7 +2036,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
         LogUtils.e("executeTask", task.toString());
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
-        if (BuildConfig.DEBUG || true) {
+        if (Config.DEBUG) {
             String type = "";
             switch (task.getType()) {
                 case AppConstant.TASK_TYPE_PICTURE:
@@ -1801,8 +2054,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             }
             String log = "执行" + type + "任务\n任务Id:" + task.getId() + "\n开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
                     "\n结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L));
-            Toast.makeText(mContext, log,
-                    Toast.LENGTH_LONG).show();
+//            Toast.makeText(mContext, log,
+//                    Toast.LENGTH_LONG).show();
             String str = "执行" + type + "任务, 任务Id:" + task.getId() + ",开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
                     ", 结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)) + ",任务内容：" + task.getContent();
             mLogView.append(str);
@@ -1927,7 +2180,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         } catch (Exception e) {
         }
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
-        if (BuildConfig.DEBUG || true) {
+        if (Config.DEBUG) {
             String type = "";
             switch (task.getType()) {
                 case AppConstant.TASK_TYPE_PICTURE:
@@ -1943,9 +2196,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     type = "天气";
                     break;
             }
-            Toast.makeText(mContext, "结束" + type + "任务\n任务Id:" + task.getId() + "\n开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
-                            "\n结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)),
-                    Toast.LENGTH_LONG).show();
+//            Toast.makeText(mContext, "结束" + type + "任务\n任务Id:" + task.getId() + "\n开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
+//                            "\n结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)),
+//                    Toast.LENGTH_LONG).show();
             String str = "结束" + type + "任务,任务Id:" + task.getId() + ",开始时间：" + simpleDateFormat.format(new Date(task.getStart_time() * 1000L)) +
                     ",结束时间：" + simpleDateFormat.format(new Date(task.getFinish_time() * 1000L)) + ",任务内容：" + task.getContent();
             mLogView.append(str);

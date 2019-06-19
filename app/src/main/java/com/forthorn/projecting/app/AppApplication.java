@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Environment;
+import android.support.multidex.MultiDex;
 
 import com.danikula.videocache.HttpProxyCacheServer;
 import com.forthorn.projecting.BuildConfig;
@@ -38,7 +39,7 @@ public class AppApplication extends Application implements Thread.UncaughtExcept
         mAppApplication = this;
         JMessageClient.init(getApplicationContext(), true);
         JMessageClient.setDebugMode(false);
-        JMessageClient.setNotificationFlag(JMessageClient.FLAG_NOTIFY_WITH_LED | JMessageClient.FLAG_NOTIFY_WITH_VIBRATE);
+        JMessageClient.setNotificationFlag(JMessageClient.FLAG_NOTIFY_DISABLE);
         FileDownloader.setup(this);
         Thread.setDefaultUncaughtExceptionHandler(this);
         initBugly();
@@ -72,18 +73,24 @@ public class AppApplication extends Application implements Thread.UncaughtExcept
     }
 
     public void restartApp() {
-        Intent intent = new Intent(mAppApplication, HomeActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        PendingIntent restartIntent = PendingIntent.getActivity(mAppApplication, 0, intent, 0);
-        AlarmManager alarmManager = (AlarmManager) mAppApplication.getSystemService(Context.ALARM_SERVICE);
-        alarmManager.set(AlarmManager.RTC, System.currentTimeMillis() + 200, restartIntent);
-        android.os.Process.killProcess(android.os.Process.myPid());  //结束进程之前可以把你程序的注销或者退出代码放在这段代码之前
+//        Intent intent = new Intent(mAppApplication, HomeActivity.class);
+//        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        PendingIntent restartIntent = PendingIntent.getActivity(mAppApplication, 0, intent, 0);
+//        AlarmManager alarmManager = (AlarmManager) mAppApplication.getSystemService(Context.ALARM_SERVICE);
+//        alarmManager.set(AlarmManager.RTC, System.currentTimeMillis() + 200, restartIntent);
+//        android.os.Process.killProcess(android.os.Process.myPid());  //结束进程之前可以把你程序的注销或者退出代码放在这段代码之前
+        Intent intent = getBaseContext().getPackageManager()
+                .getLaunchIntentForPackage(getBaseContext().getPackageName());
+        PendingIntent restartIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_ONE_SHOT);
+        AlarmManager mgr = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 2000, restartIntent); // 2秒钟后重启应用
+        System.exit(0);//退出程序
     }
 
     @Override
     public void uncaughtException(Thread t, Throwable e) {
         if (null != e && null != t) {
-//            restartApp();
+            restartApp();
         }
     }
 
@@ -96,4 +103,11 @@ public class AppApplication extends Application implements Thread.UncaughtExcept
         return new HttpProxyCacheServer.Builder(this)
                 .maxCacheSize(1024 * 1024 * 1024).build();
     }
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        MultiDex.install(this);
+    }
+
 }

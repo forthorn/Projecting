@@ -45,25 +45,25 @@ public class VideoView extends FrameLayout {
             case TYPE_VLC:
                 mIVideoView = new IJKVideoView(context);
                 if (BuildConfig.DEBUG) {
-                    Toast.makeText(context, "IJKEXO播放器", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "IJKEXO播放器", Toast.LENGTH_SHORT).show();
                 }
                 break;
             case TYPE_PL:
                 mIVideoView = new IJKVideoView(context);
                 if (BuildConfig.DEBUG) {
-                    Toast.makeText(context, "IJKEXO播放器", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "IJKEXO播放器", Toast.LENGTH_SHORT).show();
                 }
                 break;
             case TYPE_ML:
                 mIVideoView = new MVideoView(context);
                 if (BuildConfig.DEBUG) {
-                    Toast.makeText(context, "MVideoView", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "MVideoView", Toast.LENGTH_SHORT).show();
                 }
                 break;
             case TYPE_EXO:
 //                mIVideoView = new ExoVideoView(context);
                 if (BuildConfig.DEBUG) {
-                    Toast.makeText(context, "ExoVideoView", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(context, "ExoVideoView", Toast.LENGTH_SHORT).show();
                 }
         }
         LayoutParams layoutParams = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
