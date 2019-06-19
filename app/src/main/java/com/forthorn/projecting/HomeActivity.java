@@ -887,6 +887,10 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             calendar.set(Calendar.MINUTE, endMin);
             calendar.set(Calendar.SECOND, 0);
             long endTime = calendar.getTimeInMillis();
+            //结束时间小于起始时间，说明跨天了，结束时间需要跨天
+            if (endTime < startTime) {
+                endTime = endTime + 24 * 60 * 60 * 1000;
+            }
             //如果结束时间小于现在，则需要往后推一天
             if (endTime < now) {
                 startTime = startTime + 24 * 60 * 60 * 1000;
@@ -925,6 +929,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         Calendar.getInstance().setTime(new Date());
         // TODO: 2019-06-15  log出设置信息
         if (Config.DEBUG) {
+            Log.e("Time", "time: start:" + starts[index] + ", end:" + ends[index]);
             String log = "设置定时音量：音量：" + volume.getValue() + ", 开始时间：" + simpleDateFormat.format(new Date(starts[index]))
                     + ", 结束时间：" + simpleDateFormat.format(new Date(ends[index])) + ",恢复成音量：" + default_volume;
             mLogView.append(log);
