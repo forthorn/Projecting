@@ -74,31 +74,31 @@ public class AutoScrollTextView extends TextView implements View.OnClickListener
         y = getTextSize() + getPaddingTop();
     }
 
-    @Override
-    public Parcelable onSaveInstanceState() {
-        Parcelable superState = super.onSaveInstanceState();
-        SavedState ss = new SavedState(superState);
-
-        ss.step = step;
-        ss.isStarting = isStarting;
-
-        return ss;
-
-    }
-
-    @Override
-    public void onRestoreInstanceState(Parcelable state) {
-        if (!(state instanceof SavedState)) {
-            super.onRestoreInstanceState(state);
-            return;
-        }
-        SavedState ss = (SavedState) state;
-        super.onRestoreInstanceState(ss.getSuperState());
-
-        step = ss.step;
-        isStarting = ss.isStarting;
-
-    }
+//    @Override
+//    public Parcelable onSaveInstanceState() {
+//        Parcelable superState = super.onSaveInstanceState();
+//        SavedState ss = new SavedState(superState);
+//
+//        ss.step = step;
+//        ss.isStarting = isStarting;
+//
+//        return ss;
+//
+//    }
+//
+//    @Override
+//    public void onRestoreInstanceState(Parcelable state) {
+//        if (!(state instanceof SavedState)) {
+//            super.onRestoreInstanceState(state);
+//            return;
+//        }
+//        SavedState ss = (SavedState) state;
+//        super.onRestoreInstanceState(ss.getSuperState());
+//
+//        step = ss.step;
+//        isStarting = ss.isStarting;
+//
+//    }
 
 
     public static class SavedState extends BaseSavedState {
@@ -134,8 +134,9 @@ public class AutoScrollTextView extends TextView implements View.OnClickListener
             super(in);
             boolean[] b = null;
             in.readBooleanArray(b);
-            if (b != null && b.length > 0)
+            if (b != null && b.length > 0) {
                 isStarting = b[0];
+            }
             step = in.readFloat();
         }
     }

@@ -32,5 +32,5 @@ dependencies {
     compile 'tv.danmaku.ijk.media:ijkplayer-exo:0.8.8'
     compile 'com.android.support:support-annotations:28.0.0'
 //    compile 'tv.danmaku.ijk.media:ijkplayer-arm:0.8.8'
-//    compile 'tv.danmaku.ijk.media:ijkplayer-armv7a:0.8.8'
+    compile 'tv.danmaku.ijk.media:ijkplayer-armv7a:0.8.8'
 }

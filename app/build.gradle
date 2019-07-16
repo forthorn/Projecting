@@ -15,8 +15,8 @@ android {
         applicationId "com.forthorn.projecting"
         minSdkVersion 17
         targetSdkVersion 20
-        versionCode 58
-        versionName "2.0.2"
+        versionCode 61
+        versionName "2.0.5"
         multiDexEnabled true
         //PL版本
         ndk {

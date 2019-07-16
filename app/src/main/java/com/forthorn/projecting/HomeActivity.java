@@ -75,6 +75,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import cn.jpush.im.android.api.JMessageClient;
 import cn.jpush.im.android.api.callback.IntegerCallback;
@@ -95,11 +97,10 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import rx.functions.Action1;
 
-import static com.forthorn.projecting.app.Status.IDLE;
-
 
 /**
- * 修改默认播放器：{@link com.forthorn.libijk.application.Settings#getPlayer}
+ * 修改默认播放器：{@link com.forthorn.libijk.application.Settings#getPlayer} IjkVideoView注释so引入，
+ * Gradle修改引入
  * 修改UUID: {@link HomeActivity#initData()}
  * 板子1 使用sign1
  * 全志 使用 sign2
@@ -129,6 +130,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private LinearLayout mTextServerHolderLl;
     //log
     private LogView mLogView;
+    private TextView mTimeTv;
 
     private Context mContext;
     private List<String> mPicList = new ArrayList<>();
@@ -155,8 +157,10 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private static final int HANDLER_MESSAGE_START_ALARM = 0X5;
     private static final int HANDLER_MESSAGE_FINISH_ALARM = 0X6;
 
-    private static final int HANDLER_MESSAGE_VOLUME_START = 0X6;
-    private static final int HANDLER_MESSAGE_VOLUME_END = 0X7;
+    private static final int HANDLER_MESSAGE_VOLUME_START = 0X7;
+    private static final int HANDLER_MESSAGE_VOLUME_END = 0X8;
+    private static final int HANDLER_MESSAGE_FEED_DOG = 0X9;
+    private static final int HANDLER_MESSAGE_DISPLAY_TIME = 0X10;
 
     private long nextHourTimeStamp = 0L;
     private List<Integer> mTaskIdList = new ArrayList<>();
@@ -170,7 +174,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private boolean mInterCutting;
     //插播的任务
     private Task mInterCuttingTask;
-    private HttpProxyCacheServer proxy;
+//    private HttpProxyCacheServer proxy;
 
     //品牌
     private String mBrand = Build.BRAND;
@@ -183,14 +187,21 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     private int default_volume = -1;
 
+    private boolean mBackPressed;
+
+    private Timer mTimer;
+
+    private long mStartTime;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        proxy = AppApplication.getProxy(this);
+//        proxy = AppApplication.getProxy(this);
         mRxManager = new RxManager();
         mContext = HomeActivity.this;
         mMainforsettimezone = new Mainforsettimezone(this);
         sendBroadcast(new Intent().setAction("android.action.juli.HIDE_STATUSBAR"));
+        sendBroadcast(new Intent().setAction("android.intent.action.HIDE_STATUS_BAR"));
         SQLiteStudioService.instance().start(mContext);
         setContentView(R.layout.activity_home);
         initView();
@@ -205,24 +216,67 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, 600000);
 //        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_LOGIN, LOGIN_TIME);
 //        setRequestAlarm();
+//        feedDog();
+        startService(new Intent(this, AppDaemonService.class));
+        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_FEED_DOG, 10000L);
+        mStartTime = System.currentTimeMillis();
+        //测试用
+        if (false) {
+            mTimeTv.setVisibility(View.VISIBLE);
+            mTimer = new Timer();
+            mTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    mHandler.sendEmptyMessage(HANDLER_MESSAGE_DISPLAY_TIME);
+                }
+            }, 1000, 1000);
+        }
     }
 
+
+    private String formatTime(long milliseconds) {
+        long seconds = milliseconds / 1000;
+        int hour = (int) (seconds / 3600);
+        int minute = (int) ((seconds - hour * 3600) / 60);
+        int second = (int) (seconds % 60);
+        return hour + "小时" + minute + "分" + second + "秒";
+    }
 
     @Override
     protected void onStop() {
         super.onStop();
+        sendBroadcast(new Intent().setAction("android.action.juli.DISPLAY_STATUSBAR"));
+        sendBroadcast(new Intent().setAction("android.intent.action.juli.DISPLAY_STATUSBAR"));
+        sendBroadcast(new Intent().setAction("android.intent.action.DISPLAY_STATUS_BAR"));
     }
 
     @Override
     protected void onDestroy() {
-        sendBroadcast(new Intent().setAction("android.action.juli.DISPLAY_STATUSBAR"));
+        if (mTimer != null) {
+            mTimer.cancel();
+        }
         mVideoView.stopPlayback();
         mHandler.removeCallbacksAndMessages(null);
         SQLiteStudioService.instance().stop();
         unregisterReceiver(mAlarmReceiver);
         JMessageClient.unRegisterEventReceiver(this);
         mRxManager.clear();
+        if (!mBackPressed) {
+            AppApplication.getApplication().restartApp(200L);
+        } else {
+            stopFeedDog();
+        }
         super.onDestroy();
+    }
+
+
+    private void feedDog() {
+        sendBroadcast(new Intent(AppDaemonService.ACTION_DAEMON));
+        mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_FEED_DOG, 10000L);
+    }
+
+    private void stopFeedDog() {
+        sendBroadcast(new Intent(AppDaemonService.ACTION_STOP_DAEMON));
     }
 
     private void querySchedule() {
@@ -233,10 +287,10 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         scheduleCall.enqueue(new Callback<Schedule>() {
             @Override
             public void onResponse(Call<Schedule> call, Response<Schedule> response) {
-                Schedule schedule = response.body();
-                if (schedule == null) {
+                if (response == null || response.body() == null) {
                     return;
                 }
+                Schedule schedule = response.body();
                 if (schedule.getData() != null) {
                     DBUtils.getInstance().updateSchedule(schedule.getData());
                     handleOnOff(schedule.getData());
@@ -277,6 +331,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             updateCall.enqueue(new Callback<BaseResponse>() {
                 @Override
                 public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
+                    if (response == null || response.body() == null) {
+                        return;
+                    }
                     BaseResponse baseResponse = response.body();
                     Log.e("updateStatus", baseResponse == null ? "更新信息失败" : baseResponse.getMsg() + "");
                 }
@@ -356,12 +413,22 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                         adjustScheduleVolume(default_volume);
                     }
                     break;
+                case HANDLER_MESSAGE_FEED_DOG:
+                    feedDog();
+                    break;
+                case HANDLER_MESSAGE_DISPLAY_TIME:
+                    if (mTimeTv != null) {
+                        mTimeTv.setText("已运行：" + formatTime(System.currentTimeMillis() - mStartTime));
+                    }
+                    break;
             }
             if (msg.what != HANDLER_MESSAGE_TIMING_LOGIN
                     && msg.what != HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT
                     && msg.what != HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE
                     && msg.what != HANDLER_MESSAGE_VOLUME_START
-                    && msg.what != HANDLER_MESSAGE_VOLUME_END) {
+                    && msg.what != HANDLER_MESSAGE_VOLUME_END
+                    && msg.what != HANDLER_MESSAGE_FEED_DOG
+                    && msg.what != HANDLER_MESSAGE_DISPLAY_TIME) {
                 int taskId = msg.what;
                 LogUtils.e("任务消息", "taskID=" + taskId);
                 int type = msg.arg1;
@@ -381,6 +448,13 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             }
         }
     };
+
+
+    @Override
+    public void onBackPressed() {
+        mBackPressed = true;
+        super.onBackPressed();
+    }
 
     /**
      * 获取任务
@@ -404,6 +478,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         taskResCall.enqueue(new Callback<TaskRes>() {
             @Override
             public void onResponse(Call<TaskRes> call, Response<TaskRes> response) {
+                if (response == null || response.body() == null) {
+                    return;
+                }
                 LogUtils.e("查询任务", "结果：" + response.raw().body().toString());
                 TaskRes taskRes = response.body();
                 if (taskRes == null) {
@@ -488,6 +565,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mLogView = (LogView) findViewById(R.id.log_view);
 //        mLogView.setVisibility(BuildConfig.DEBUG || true ? View.VISIBLE : View.GONE);
         mLogView.setVisibility(Config.DEBUG ? View.VISIBLE : View.GONE);
+
+        mTimeTv = findViewById(R.id.time_tv);
     }
 
     private void initData() {
@@ -500,13 +579,13 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 //        mUuid = "16d98032-36d7-3467-98f9-ee2086a6eb71";
 //        mUuid = "81292800-f23c-3ff9-bab2-469732b4d806";
 //        mUuid = "a37a8a78-b8fb-3e09-8295-405983d8069c";
-//        mUuid = "c12280f4-d12c-3fdf-be79-583585244580"; 聚力
+//        mUuid = "c12280f4-d12c-3fdf-be79-583585244580"; //聚力
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
         Glide.with(mContext).load(R.drawable.ic_idle_bg).into(mIdleBgIv);
         mIdleBgIv.requestFocus();
-        mStatus = IDLE;
+        mStatus = Status.IDLE;
     }
 
     private void initEvent() {
@@ -538,6 +617,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         imAccountCall.enqueue(new Callback<IMAccount>() {
             @Override
             public void onResponse(Call<IMAccount> call, Response<IMAccount> response) {
+                if (response == null || response.body() == null) {
+                    return;
+                }
                 IMAccount imAccount = response.body();
                 if (imAccount == null || imAccount.getData() == null) {
                     mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT, 60000);
@@ -927,7 +1009,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mHandler.sendMessageDelayed(message2, (ends[index] - now));
         //重置时间
         Calendar.getInstance().setTime(new Date());
-        // TODO: 2019-06-15  log出设置信息
         if (Config.DEBUG) {
             Log.e("Time", "time: start:" + starts[index] + ", end:" + ends[index]);
             String log = "设置定时音量：音量：" + volume.getValue() + ", 开始时间：" + simpleDateFormat.format(new Date(starts[index]))
@@ -955,6 +1036,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             //重新查询任务开始
             //重置一切状态
             mHandler.removeCallbacksAndMessages(null);
+            feedDog();
             mTaskIds.clear();
             //重新进行任务查询
 //            queryTask();
@@ -1386,6 +1468,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         sleepCall.enqueue(new Callback<BaseResponse>() {
             @Override
             public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
+                if (response == null || response.body() == null) {
+                    return;
+                }
                 LogUtils.e("sleep", response.body().getMsg() == null ? "休眠上报成功" : response.body().getMsg());
             }
 
@@ -1444,6 +1529,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         wakeupCall.enqueue(new Callback<BaseResponse>() {
             @Override
             public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
+                if (response == null || response.body() == null) {
+                    return;
+                }
                 LogUtils.e("wakeUp", response.body().getMsg() == null ? "唤醒上报成功" : response.body().getMsg());
             }
 
@@ -1496,6 +1584,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         volumeCall.enqueue(new Callback<BaseResponse>() {
             @Override
             public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
+                if (response == null || response.body() == null) {
+                    return;
+                }
                 BaseResponse baseResponse = response.body();
                 LogUtils.e("adjustVolume", baseResponse.getMsg() == null ? "调节音量成功" : baseResponse.getMsg());
             }
@@ -1543,6 +1634,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         volumeCall.enqueue(new Callback<BaseResponse>() {
             @Override
             public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
+                if (response == null || response.body() == null) {
+                    return;
+                }
                 BaseResponse baseResponse = response.body();
                 LogUtils.e("adjustVolume", baseResponse.getMsg() == null ? "调节音量成功" : baseResponse.getMsg());
             }
@@ -1657,9 +1751,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             //Toast.makeText(mContext, "播放缓存视频" + filePath, //Toast.LENGTH_SHORT).show();
         } else {
             filePath = task.getContent();
-            if (proxy != null) {
-                filePath = proxy.getProxyUrl(filePath);
-            }
+//            if (proxy != null) {
+//                filePath = proxy.getProxyUrl(filePath);
+//            }
             //Toast.makeText(mContext, "播放网络视频" + filePath, //Toast.LENGTH_SHORT).show();
         }
 //        filePath = "http://ahwyx.com/images/attachment/20190219/15505628629557.mp4";
@@ -1737,6 +1831,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         uploadCall.enqueue(new Callback<BaseResponse>() {
             @Override
             public void onResponse(Call<BaseResponse> call, Response<BaseResponse> response) {
+                if (response == null || response.body() == null) {
+                    return;
+                }
                 LogUtils.e("snapshot", response.body().getMsg() == null ? "上传成功" : response.body().getMsg());
                 try {
                     File file = new File(mSnapFilePath);
@@ -2379,8 +2476,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-//        //Toast.makeText(mContext, "按下了" + keyCode, //Toast.LENGTH_SHORT).show();
+        Toast.makeText(mContext, "按下了" + keyCode, Toast.LENGTH_LONG).show();
         if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_M) {
+            mBackPressed = true;
             goToAbout();
             return true;
         }

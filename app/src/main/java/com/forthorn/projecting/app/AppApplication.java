@@ -72,7 +72,7 @@ public class AppApplication extends Application implements Thread.UncaughtExcept
         Bugly.init(getApplicationContext(), "a153c22bee", BuildConfig.DEBUG);
     }
 
-    public void restartApp() {
+    public void restartApp(long millisecond) {
 //        Intent intent = new Intent(mAppApplication, HomeActivity.class);
 //        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 //        PendingIntent restartIntent = PendingIntent.getActivity(mAppApplication, 0, intent, 0);
@@ -83,15 +83,15 @@ public class AppApplication extends Application implements Thread.UncaughtExcept
                 .getLaunchIntentForPackage(getBaseContext().getPackageName());
         PendingIntent restartIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_ONE_SHOT);
         AlarmManager mgr = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 2000, restartIntent); // 2秒钟后重启应用
+        mgr.set(AlarmManager.RTC, System.currentTimeMillis() + millisecond, restartIntent); // 2秒钟后重启应用
         System.exit(0);//退出程序
     }
 
     @Override
     public void uncaughtException(Thread t, Throwable e) {
-        if (null != e && null != t) {
-            restartApp();
-        }
+        restartApp(1000L);
+//        if (null != e && null != t) {
+//        }
     }
 
     public static HttpProxyCacheServer getProxy(Context context) {

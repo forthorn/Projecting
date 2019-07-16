@@ -19,6 +19,7 @@ package com.forthorn.libijk.application;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.preference.PreferenceManager;
 
 import com.forthorn.libijk.R;
@@ -45,16 +46,19 @@ public class Settings {
 
     public int getPlayer() {
         // TODO: 2019-05-28  写死
-        if (true) {
+        if ("softwinners".equals(Build.BRAND)
+                || "rockchip".equals(Build.BRAND)) {
+            return 2;
+        }else {
             return 1;
         }
-        String key = mAppContext.getString(R.string.pref_key_player);
-        String value = mSharedPreferences.getString(key, "1");
-        try {
-            return Integer.valueOf(value).intValue();
-        } catch (NumberFormatException e) {
-            return 1;
-        }
+//        String key = mAppContext.getString(R.string.pref_key_player);
+//        String value = mSharedPreferences.getString(key, "1");
+//        try {
+//            return Integer.valueOf(value).intValue();
+//        } catch (NumberFormatException e) {
+//            return 1;
+//        }
     }
 
     public boolean getUsingMediaCodec() {

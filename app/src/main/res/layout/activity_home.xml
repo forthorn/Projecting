@@ -1,26 +1,26 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             xmlns:tools="http://schemas.android.com/tools"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent"
-             android:background="@color/black_000000"
-             tools:context="com.forthorn.projecting.HomeActivity">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black_000000"
+    tools:context="com.forthorn.projecting.HomeActivity">
 
     <!-- The primary full-screen view. This can be replaced with whatever view
          is needed to present your content, e.g. VideoView, SurfaceView,
          TextureView, etc. -->
-    <include layout="@layout/layout_idle"/>
+    <include layout="@layout/layout_idle" />
 
     <include
         layout="@layout/layout_video"
-        android:visibility="invisible"/>
+        android:visibility="invisible" />
 
     <include
         layout="@layout/layout_picture"
-        android:visibility="invisible"/>
+        android:visibility="invisible" />
 
     <include
         layout="@layout/layout_text"
-        android:visibility="invisible"/>
+        android:visibility="invisible" />
 
     <com.forthorn.projecting.widget.LogView
         android:id="@+id/log_view"
@@ -30,6 +30,13 @@
         android:paddingTop="8dp"
         android:paddingRight="8dp"
         android:paddingBottom="8dp"
-        tools:layout_height="48dp">
-    </com.forthorn.projecting.widget.LogView>
+        tools:layout_height="48dp"></com.forthorn.projecting.widget.LogView>
+
+    <TextView
+        android:id="@+id/time_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:textColor="@color/blue_2C72FF"
+        android:visibility="gone" />
 </FrameLayout>

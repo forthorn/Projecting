@@ -13,9 +13,16 @@ import com.forthorn.projecting.HomeActivity;
  */
 
 public class BootReceiver extends BroadcastReceiver {
+
+    public static final String ACTION_LAUNCH_APP = "com.forthorn.projecting.LAUNCH";
+
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (intent.getAction().equals("android.intent.action.BOOT_COMPLETED")) {
+        if (ACTION_LAUNCH_APP.equals(intent.getAction())) {
+            Intent intent2 = new Intent(context, HomeActivity.class);
+            intent2.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent2);
+        } else if ("android.intent.action.BOOT_COMPLETED".equals(intent.getAction())) {
             Intent intent2 = new Intent(context, HomeActivity.class);
             intent2.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent2);
