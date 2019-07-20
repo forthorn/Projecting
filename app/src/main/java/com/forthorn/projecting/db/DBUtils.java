@@ -18,13 +18,11 @@ import java.util.List;
 public class DBUtils {
 
     private static DBUtils sDBUtils;
-    private DBHelper dbHelper = null;
+    private DBHelper dbHelper;
     private SQLiteDatabase db = null;
-    private Context mContext;
 
     private DBUtils(Context context) {
-        mContext = context;
-        dbHelper = DBHelper.getInstance(mContext);
+        dbHelper = DBHelper.getInstance(context);
     }
 
 
@@ -251,9 +249,11 @@ public class DBUtils {
             download.setPath(cursor.getString(cursor.getColumnIndex(DBHelper.DOWNLOAD_PATH)));
             download.setTime(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_TIME)));
             download.setFileSize(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_FILE_SIZE)));
+            cursor.close();
             db.close();
             return download;
         }
+        cursor.close();
         db.close();
         return null;
     }
@@ -271,9 +271,11 @@ public class DBUtils {
             download.setPath(cursor.getString(cursor.getColumnIndex(DBHelper.DOWNLOAD_PATH)));
             download.setTime(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_TIME)));
             download.setFileSize(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_FILE_SIZE)));
+            cursor.close();
             db.close();
             return download;
         }
+        cursor.close();
         db.close();
         return null;
     }
@@ -290,11 +292,26 @@ public class DBUtils {
             download.setPath(cursor.getString(cursor.getColumnIndex(DBHelper.DOWNLOAD_PATH)));
             download.setTime(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_TIME)));
             download.setFileSize(cursor.getInt(cursor.getColumnIndex(DBHelper.DOWNLOAD_FILE_SIZE)));
+            cursor.close();
             db.close();
             return download;
         }
+        cursor.close();
         db.close();
         return null;
+    }
+
+    public boolean findDownload(String path) {
+        db = dbHelper.getWritableDatabase();
+        Cursor cursor = db.rawQuery("select * from DOWNLOAD_TABLE where download_path =?", new String[]{path});
+        if (cursor.moveToNext()) {
+            cursor.close();
+            db.close();
+            return true;
+        }
+        cursor.close();
+        db.close();
+        return false;
     }
 
     public List<Download> findAllDownload() {

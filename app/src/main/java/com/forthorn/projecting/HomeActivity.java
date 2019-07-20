@@ -69,6 +69,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -174,7 +175,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private boolean mInterCutting;
     //插播的任务
     private Task mInterCuttingTask;
-//    private HttpProxyCacheServer proxy;
+    private HttpProxyCacheServer proxy;
 
     //品牌
     private String mBrand = Build.BRAND;
@@ -196,7 +197,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        proxy = AppApplication.getProxy(this);
+        proxy = AppApplication.getProxy(this);
         mRxManager = new RxManager();
         mContext = HomeActivity.this;
         mMainforsettimezone = new Mainforsettimezone(this);
@@ -335,7 +336,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                         return;
                     }
                     BaseResponse baseResponse = response.body();
-                    Log.e("updateStatus", baseResponse == null ? "更新信息失败" : baseResponse.getMsg() + "");
+                    Log.e("updateStatus", baseResponse.getMsg() + "");
                 }
 
                 @Override
@@ -418,7 +419,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     break;
                 case HANDLER_MESSAGE_DISPLAY_TIME:
                     if (mTimeTv != null) {
-                        mTimeTv.setText("已运行：" + formatTime(System.currentTimeMillis() - mStartTime));
+                        mTimeTv.setText(String.format("已运行：%s", formatTime(System.currentTimeMillis() - mStartTime)));
                     }
                     break;
             }
@@ -514,7 +515,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             for (Task task : list) {
                 executeTask(task.getId());
             }
-            LogUtils.e("queryTask", list.toArray().toString());
+            LogUtils.e("queryTask", Arrays.toString(list.toArray()));
         } else {
             LogUtils.e("queryTask", "查询目前任务列表为空");
         }
@@ -621,7 +622,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     return;
                 }
                 IMAccount imAccount = response.body();
-                if (imAccount == null || imAccount.getData() == null) {
+                if (imAccount.getData() == null) {
                     mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT, 60000);
                     login();
                     return;
@@ -818,7 +819,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             for (Task task2 : list) {
                 executeTask(task2.getId());
             }
-            LogUtils.e("queryTask", list.toArray().toString());
+            LogUtils.e("queryTask", Arrays.toString(list.toArray()));
         } else {
             LogUtils.e("queryTask", "查询目前任务列表为空");
         }
@@ -1299,7 +1300,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             } else {
                 offsetTime = calendar.getTimeInMillis();
             }
-        } else if (offset > 0) {       //大于0 ，说明是本周
+        } else {       //大于0 ，说明是本周
             offsetTime = calendar.getTimeInMillis() + Math.abs(offset) * 24L * 60L * 60L * 1000L;
         }
         calendar.setTime(new Date());
@@ -1744,6 +1745,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             filePath = download.getPath();
             Downloader.getInstance().setCurrentFilePath(filePath);
             if (!new File(filePath).exists()) {
+                //文件不存在，删除
                 DBUtils.getInstance().deleteDownload(download);
                 filePath = task.getContent();
                 //Toast.makeText(mContext, "播放网络视频" + filePath, //Toast.LENGTH_SHORT).show();
@@ -1751,9 +1753,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             //Toast.makeText(mContext, "播放缓存视频" + filePath, //Toast.LENGTH_SHORT).show();
         } else {
             filePath = task.getContent();
-//            if (proxy != null) {
-//                filePath = proxy.getProxyUrl(filePath);
-//            }
+            if (proxy != null) {
+                filePath = proxy.getProxyUrl(filePath);
+            }
             //Toast.makeText(mContext, "播放网络视频" + filePath, //Toast.LENGTH_SHORT).show();
         }
 //        filePath = "http://ahwyx.com/images/attachment/20190219/15505628629557.mp4";
@@ -2476,7 +2478,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        Toast.makeText(mContext, "按下了" + keyCode, Toast.LENGTH_LONG).show();
         if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_M) {
             mBackPressed = true;
             goToAbout();

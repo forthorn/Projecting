@@ -1,12 +1,11 @@
 package com.forthorn.projecting.downloader;
 
 import android.os.Environment;
+import android.os.StatFs;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.forthorn.projecting.BuildConfig;
-import com.forthorn.projecting.app.AppApplication;
 import com.forthorn.projecting.app.AppConstant;
 import com.forthorn.projecting.db.DBUtils;
 import com.forthorn.projecting.entity.Download;
@@ -18,6 +17,11 @@ import com.liulishuo.filedownloader.FileDownloadSampleListener;
 import com.liulishuo.filedownloader.FileDownloader;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Created by: Forthorn
@@ -27,8 +31,8 @@ import java.io.File;
 
 public class Downloader {
 
-    private static Downloader sDownloader;
     private String mCurrentFilePath;
+    private static final int AVAILABLE_SIZE = 1024;
 
     private static class InstanceHolder {
         private static final Downloader DOWNLOADER = new Downloader();
@@ -38,7 +42,7 @@ public class Downloader {
         return InstanceHolder.DOWNLOADER;
     }
 
-    public String getCurrentFilePath() {
+    private String getCurrentFilePath() {
         return mCurrentFilePath;
     }
 
@@ -113,10 +117,10 @@ public class Downloader {
 
 
     /**
-     * 检查磁盘空间大小，大于2048M则先删除文件再下载
+     * 检查磁盘空间大小，可用空间不足1024M则先删除文件再下载
      */
     private String checkDiskSpaceAndDir() {
-        File sdcardDir = null;
+        File sdcardDir;
         boolean sdcardExist = Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED);
         if (sdcardExist) {
             sdcardDir = Environment.getExternalStorageDirectory();
@@ -127,37 +131,64 @@ public class Downloader {
         if (!dir.exists()) {
             dir.mkdir();
         }
-        while (getFolderSize(dir) > 2048) {
+        //如果可用空间大于AVAILABLE_SIZE，直接返回目录
+        long availableSize = getAvailableSize(sdcardDir);
+        if (availableSize > AVAILABLE_SIZE) {
+            LogUtils.e("Downloader", "剩余空间:" + availableSize + "MB , 空间充足");
+            return dir.toString();
+        }
+        LogUtils.e("Downloader", "剩余空间:" + availableSize + "MB , 空间不足, 需要删除文件");
+        //否则需要开始删除文件
+        final File[] files = dir.listFiles();
+        if (files.length == 0) {
+            return dir.toString();
+        }
+        //对已有文件进行排序，根据最新修改时间进行排序
+        List<File> list = new ArrayList<>(Arrays.asList(files));
+//        StringBuilder stringBuilder = new StringBuilder();
+//        for (File file : list) {
+//            stringBuilder.append("[ 文件名：" + file.getName() + ",修改时间：" + file.lastModified() + ", 绝对路径:" + file.getAbsolutePath() + " ]");
+//        }
+//        Log.e("Downloader", "排序前列表：" + stringBuilder.toString());
+        Collections.sort(list, new Comparator<File>() {
+            @Override
+            public int compare(File o1, File o2) {
+                return (o1.lastModified() < o2.lastModified()) ? -1 : ((o1.lastModified() == o2.lastModified()) ? 0 : 1);
+            }
+        });
+//        stringBuilder = new StringBuilder();
+//        for (File file : list) {
+//            stringBuilder.append("[ 文件名：" + file.getName() + ",修改时间：" + file.lastModified() + ", 绝对路径:" + file.getAbsolutePath() + " ]");
+//        }
+//        Log.e("Downloader", "排序后列表：" + stringBuilder.toString());
+        //根据排序好的顺序进行处理
+        //如果文件没在数据库中找到，先删除
+        for (File file : list) {
+            if (getAvailableSize(sdcardDir) < AVAILABLE_SIZE) {
+                if (!DBUtils.getInstance().findDownload(file.getAbsolutePath())) {
+                    //当前播放的地址不等于文件地址就可以进行删除
+                    if (!file.getAbsolutePath().equals(getCurrentFilePath()) && !file.getName().startsWith("log_")) {
+                        LogUtils.e("Downloader", "空间不足，删除无效文件：" + file.getAbsolutePath());
+                        file.delete();
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+        //如果大小还不足，开始删除数据库中存在的文件，找到最早下载的文件进行删除
+        //不使用while循环，删除一个就好
+        while (getAvailableSize(sdcardDir) < AVAILABLE_SIZE) {
             Download download = DBUtils.getInstance().findEarliestDownload();
             if (download != null) {
                 if (!TextUtils.isEmpty(download.getPath())) {
                     File earliestFile = new File(download.getPath());
                     if (earliestFile.exists()) {
+                        LogUtils.e("Downloader", "空间不足，删除最早的缓存文件：" + earliestFile.getAbsolutePath());
                         earliestFile.delete();
                     }
                 }
                 DBUtils.getInstance().deleteDownload(download);
-            } else {
-                File[] files = dir.listFiles();
-                if (files.length == 0) {
-                    break;
-                }
-                int index = 0;
-                long earliestLastModify = files[0].lastModified();
-                for (int i = 0; i < files.length; i++) {
-                    if (files[i].lastModified() < earliestLastModify) {
-                        index = i;
-                        earliestLastModify = files[i].lastModified();
-                    }
-                }
-                try {
-                    if (files[index].exists() && files[index].isFile()) {
-                        if (getCurrentFilePath() != null || !files[index].getPath().equals(getCurrentFilePath())) {
-                            files[index].delete();
-                        }
-                    }
-                } catch (Exception e) {
-                }
             }
         }
         return dir.toString();
@@ -169,15 +200,33 @@ public class Downloader {
     }
 
 
+    /**
+     * 获取可用空间大小
+     *
+     * @param sdcardDir
+     * @return
+     */
+    private long getAvailableSize(File sdcardDir) {
+        StatFs sf = new StatFs(sdcardDir.getPath());
+        long blockSize = sf.getBlockSize();
+        long blockCount = sf.getBlockCount();
+        long availCount = sf.getAvailableBlocks();
+        long totalSize = blockSize * blockCount / 1024;
+        long availableSize = availCount * blockSize / 1024;
+//        LogUtils.e("Downloader", "block大小:" + blockSize + ",block数目:" + blockCount + ",总大小:" + blockSize * blockCount / 1024 + "KB");
+//        LogUtils.e("Downloader", "可用的block数目：:" + availCount + ",剩余空间:" + availCount * blockSize / 1024 + "KB");
+        return availableSize / 1024;
+    }
+
     public long getFolderSize(File file) {
         long size = 0;
         try {
             java.io.File[] fileList = file.listFiles();
-            for (int i = 0; i < fileList.length; i++) {
-                if (fileList[i].isDirectory()) {
-                    size = size + getFolderSize(fileList[i]);
+            for (File file1 : fileList) {
+                if (file1.isDirectory()) {
+                    size = size + getFolderSize(file1);
                 } else {
-                    size = size + fileList[i].length();
+                    size = size + file1.length();
                 }
             }
         } catch (Exception e) {
