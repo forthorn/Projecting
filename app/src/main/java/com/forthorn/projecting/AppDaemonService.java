@@ -12,6 +12,9 @@ import android.os.Message;
 import android.util.Log;
 
 import com.forthorn.projecting.receiver.BootReceiver;
+import com.forthorn.projecting.util.LogUtils;
+
+import java.lang.ref.WeakReference;
 
 
 /**
@@ -34,24 +37,31 @@ public class AppDaemonService extends Service {
 
     private WatchDogReceiver mWatchDogReceiver;
     private int mCount;
+    private AppDaemonHandler mHandler = new AppDaemonHandler(this);
 
 
-    private Handler mHandler = new Handler() {
+    public static class AppDaemonHandler extends Handler {
+
+        private WeakReference<AppDaemonService> mReference;
+
+        AppDaemonHandler(AppDaemonService service) {
+            mReference = new WeakReference<>(service);
+        }
+
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MSG_CHECK:
-                    checkDog();
-                    break;
+            if (msg.what == MSG_CHECK) {
+                if (mReference != null && mReference.get() != null) {
+                    mReference.get().checkDog();
+                }
             }
         }
-    };
+    }
 
     /**
      * 检测看门狗是否计数器是否溢出
      */
     private void checkDog() {
-        Log.e(TAG, "checkDog");
         //超过了计数器，发送广播启动主页面
         if (mCount >= 2) {
             sendBroadcast(new Intent(BootReceiver.ACTION_LAUNCH_APP));
@@ -64,7 +74,6 @@ public class AppDaemonService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.e(TAG, "onCreate");
         if (mWatchDogReceiver == null) {
             mWatchDogReceiver = new WatchDogReceiver();
         }
@@ -72,6 +81,7 @@ public class AppDaemonService extends Service {
         intentFilter.addAction(ACTION_DAEMON);
         intentFilter.addAction(ACTION_STOP_DAEMON);
         registerReceiver(mWatchDogReceiver, intentFilter);
+        LogUtils.e("守护服务", "开启守护服务");
     }
 
     @Override
@@ -81,7 +91,7 @@ public class AppDaemonService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.e(TAG, "onStartCommand");
+        LogUtils.e("守护服务", "运行守护服务");
         mHandler.removeCallbacksAndMessages(null);
         mHandler.sendEmptyMessageDelayed(MSG_CHECK, INTERVEL);
         return super.onStartCommand(intent, flags, startId);
@@ -96,7 +106,7 @@ public class AppDaemonService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.e(TAG, "onDestroy");
+        LogUtils.e("守护服务", "结束守护服务");
         unregisterReceiver(mWatchDogReceiver);
         mHandler.removeCallbacksAndMessages(null);
     }

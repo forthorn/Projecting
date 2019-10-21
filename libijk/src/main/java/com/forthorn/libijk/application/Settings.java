@@ -48,7 +48,7 @@ public class Settings {
         // TODO: 2019-05-28  写死
         if ("softwinners".equals(Build.BRAND)
                 || "rockchip".equals(Build.BRAND)) {
-            return 2;
+            return 1;
         }else {
             return 1;
         }

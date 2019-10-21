@@ -57,7 +57,8 @@
         android:persistent="true"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.FullScreen"
-        android:usesCleartextTraffic="false">
+        android:usesCleartextTraffic="false"
+        tools:ignore="GoogleAppIndexingWarning">
         <uses-library
             android:name="org.apache.http.legacy"
             android:required="false" />
@@ -84,7 +85,7 @@
         </activity>
         <activity
             android:name="com.forthorn.projecting.AboutActivity"
-            android:screenOrientation="landscape"></activity>
+            android:screenOrientation="landscape" />
 
         <service
             android:name="com.forthorn.projecting.AppDaemonService"
@@ -103,6 +104,7 @@
             </intent-filter>
 
         </receiver>
-        <receiver android:name="com.forthorn.projecting.receiver.AlarmReceiver"></receiver>
+
+        <receiver android:name="com.forthorn.projecting.receiver.AlarmReceiver" />
     </application>
 </manifest>

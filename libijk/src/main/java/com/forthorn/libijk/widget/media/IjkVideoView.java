@@ -182,7 +182,14 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
                 LayoutParams.MATCH_PARENT,
                 LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM);
+//        TableLayout tableLayout = new TableLayout(context);
+//        LayoutParams layoutParams_tablelayout = new LayoutParams(
+//                LayoutParams.MATCH_PARENT,
+//                LayoutParams.WRAP_CONTENT,
+//                Gravity.CENTER);
+//        addView(tableLayout, layoutParams_tablelayout);
         addView(subtitleDisplay, layoutParams_txt);
+//        setHudView(tableLayout);
     }
 
     public void setRenderView(IRenderView renderView) {
@@ -1105,7 +1112,7 @@ public class IjkVideoView extends FrameLayout implements MediaController.MediaPl
                     } else {
                         ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "overlay-format", pixelFormat);
                     }
-                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 10);
+                    ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 5);
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 0);
 
                     ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http-detect-range-support", 0);

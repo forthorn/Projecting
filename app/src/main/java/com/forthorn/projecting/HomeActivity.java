@@ -55,6 +55,7 @@ import com.forthorn.projecting.func.picture.PictureAdapter;
 import com.forthorn.projecting.receiver.AlarmReceiver;
 import com.forthorn.projecting.util.GsonUtils;
 import com.forthorn.projecting.util.LogUtils;
+import com.forthorn.projecting.util.NetWorkUtils;
 import com.forthorn.projecting.util.SPUtils;
 import com.forthorn.projecting.util.ToastUtil;
 import com.forthorn.projecting.video.IVideoListener;
@@ -143,8 +144,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private int mDeviceId;
     private String mDeviceCode;
 
-    private AudioManager mAudioManager;
-    private AlarmManager mAlarmManager;
     private AlarmReceiver mAlarmReceiver;
 
     private RxManager mRxManager;
@@ -205,6 +204,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         sendBroadcast(new Intent().setAction("android.intent.action.HIDE_STATUS_BAR"));
         SQLiteStudioService.instance().start(mContext);
         setContentView(R.layout.activity_home);
+        LogUtils.e("启动", "主界面加载");
         initView();
         initData();
         initEvent();
@@ -219,6 +219,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 //        setRequestAlarm();
 //        feedDog();
         startService(new Intent(this, AppDaemonService.class));
+
         mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_FEED_DOG, 10000L);
         mStartTime = System.currentTimeMillis();
         //测试用
@@ -235,6 +236,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     }
 
 
+    /**
+     * 格式化时间
+     *
+     * @param milliseconds 毫秒值
+     * @return 格式化后的 XX小时XX分XX秒 字符串
+     */
     private String formatTime(long milliseconds) {
         long seconds = milliseconds / 1000;
         int hour = (int) (seconds / 3600);
@@ -271,17 +278,28 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     }
 
 
+    /**
+     * 守护进程喂狗
+     */
     private void feedDog() {
         sendBroadcast(new Intent(AppDaemonService.ACTION_DAEMON));
         mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_FEED_DOG, 10000L);
     }
 
+    /**
+     * 守护进程 停止喂狗
+     */
     private void stopFeedDog() {
         sendBroadcast(new Intent(AppDaemonService.ACTION_STOP_DAEMON));
     }
 
+    /**
+     * 联网查询开关机设定
+     */
     private void querySchedule() {
+        LogUtils.d("查询联网开关机设置", "当前网络状态：" + (NetWorkUtils.isNetConnected(mContext) ? "网络连接正常" : "网络不可用"));
         if (mDeviceId == 0) {
+            LogUtils.d("查询联网开关机设置", "未获取到设备ID，不进行联网查询");
             return;
         }
         Call<Schedule> scheduleCall = Api.getDefault(HostType.VOM_HOST).getOnOff(Api.getCacheControl(), String.valueOf(mDeviceId));
@@ -289,10 +307,12 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             @Override
             public void onResponse(Call<Schedule> call, Response<Schedule> response) {
                 if (response == null || response.body() == null) {
+                    LogUtils.d("查询联网开关机设置", "查询服务器返回数据出现错误，空数据");
                     return;
                 }
                 Schedule schedule = response.body();
                 if (schedule.getData() != null) {
+                    LogUtils.d("查询联网开关机设置", "查询到最新开关机设置，即将更新设置");
                     DBUtils.getInstance().updateSchedule(schedule.getData());
                     handleOnOff(schedule.getData());
                 }
@@ -304,12 +324,17 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
             @Override
             public void onFailure(Call<Schedule> call, Throwable t) {
+                LogUtils.d("查询联网开关机设置", "查询出现错误，错误消息：" + t.getMessage());
             }
         });
     }
 
 
+    /**
+     * 网络同步更新本机状态
+     */
     private void updateStatus() {
+        LogUtils.d("网络更新本机状态", "同步本机音量，唤醒状态到服务器");
         if (mDeviceId != 0) {
             AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
             audioManager.requestAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
@@ -337,6 +362,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     }
                     BaseResponse baseResponse = response.body();
                     Log.e("updateStatus", baseResponse.getMsg() + "");
+                    LogUtils.d("网络更新本机状态", "同步本机状态到服务器成功");
                 }
 
                 @Override
@@ -348,6 +374,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     }
 
 
+    /**
+     * 获取下一个小时的时间戳
+     *
+     * @return
+     */
     private long getNextHourStamp() {
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT+8:00"));
         int hour = cal.get(Calendar.HOUR_OF_DAY);
@@ -359,8 +390,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         return nextHourTime / 1000L;
     }
 
+    /**
+     * 设置请求闹钟时间
+     */
     private void setRequestAlarm() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Log.e("Alarm", "现在是：" + sdf.format(new Date()));
         //Toast.makeText(mContext, "现在是：" + sdf.format(new Date()), //Toast.LENGTH_SHORT).show();
         nextHourTimeStamp = getNextHourStamp();
@@ -451,6 +485,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     };
 
 
+    /**
+     * 手动返回
+     */
     @Override
     public void onBackPressed() {
         mBackPressed = true;
@@ -462,17 +499,22 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      */
     private void requestTasks(Long timeStamp) {
         if (mDeviceId == 0) {
+            LogUtils.d("联网获取任务", "未获取到正确的设备ID，不进行网络任务查询");
             return;
         }
         //登录IM
         login();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss:SSS");
+
+        LogUtils.d("联网获取任务", "未获取到正确的设备ID，不进行网络任务查询");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         if (Config.DEBUG) {
             String log = "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务";
             Toast.makeText(mContext, log, Toast.LENGTH_SHORT).show();
             mLogView.append(log);
         }
-        LogUtils.e("request", "请求：" + sdf.format(new Date(timeStamp * 1000L)) + "的任务");
+
+        LogUtils.d("联网获取任务", "请求：" + sdf.format(new Date(timeStamp * 1000L)) + "的任务");
         //Toast.makeText(mContext, "查询" + sdf.format(new Date(timeStamp * 1000L)) + "的任务", //Toast.LENGTH_SHORT).show();
         Call<TaskRes> taskResCall = Api.getDefault(HostType.VOM_HOST).getTaskList(Api.getCacheControl(),
                 String.valueOf(mDeviceId), String.valueOf(timeStamp));
@@ -482,7 +524,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 if (response == null || response.body() == null) {
                     return;
                 }
-                LogUtils.e("查询任务", "结果：" + response.raw().body().toString());
+//                LogUtils.e("查询任务", "结果：" + response.raw().body().toString());
                 TaskRes taskRes = response.body();
                 if (taskRes == null) {
                     //Toast.makeText(mContext, "查询失败：空", //Toast.LENGTH_SHORT).show();
@@ -508,27 +550,31 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     }
 
 
+    /**
+     * 查询本地数据库任务
+     */
     private void queryTask() {
         DBUtils.getInstance().deleteOverdueTask();
         List<Task> list = DBUtils.getInstance().findPauseTask();
         if (!list.isEmpty()) {
+            LogUtils.e("启动", "查询本地任务列表：当前任务列表数量：" + list.size());
             for (Task task : list) {
+                LogUtils.e("启动", "本地任务处理：" + task.toString());
                 executeTask(task.getId());
             }
-            LogUtils.e("queryTask", Arrays.toString(list.toArray()));
         } else {
-            LogUtils.e("queryTask", "查询目前任务列表为空");
+            LogUtils.e("启动", "查询本地任务列表：目前任务列表为空");
         }
     }
 
 
     private void initPlayer() {
-        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         mVideoView.setUp(this, VideoView.TYPE_VLC);
     }
 
     private void initIM() {
+        LogUtils.e("启动", "查询联网获取网络IM账户");
         JMessageClient.registerEventReceiver(this);
         requestIMAccount();
     }
@@ -580,13 +626,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 //        mUuid = "16d98032-36d7-3467-98f9-ee2086a6eb71";
 //        mUuid = "81292800-f23c-3ff9-bab2-469732b4d806";
 //        mUuid = "a37a8a78-b8fb-3e09-8295-405983d8069c";
-//        mUuid = "c12280f4-d12c-3fdf-be79-583585244580"; //聚力
+        mUuid = "c12280f4-d12c-3fdf-be79-583585244580"; //聚力
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
         Glide.with(mContext).load(R.drawable.ic_idle_bg).into(mIdleBgIv);
         mIdleBgIv.requestFocus();
         mStatus = Status.IDLE;
+        LogUtils.d("启动", "初始化数据 主板编码：" + mUuid);
     }
 
     private void initEvent() {
@@ -614,15 +661,20 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * 获取IM账号
      */
     private void requestIMAccount() {
+        LogUtils.d("网络获取网络IM账户", "当前网络状态：" + (NetWorkUtils.isNetConnected(mContext) ? "网络连接正常" : "网络不可用"));
         Call<IMAccount> imAccountCall = Api.getDefault(HostType.VOM_HOST).getIMAccount(Api.getCacheControl(), mUuid);
         imAccountCall.enqueue(new Callback<IMAccount>() {
             @Override
             public void onResponse(Call<IMAccount> call, Response<IMAccount> response) {
                 if (response == null || response.body() == null) {
+                    LogUtils.d("网络获取网络IM账户", "数据获取失败，服务器返回空数据，1分钟后重新请求");
+                    mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT, 60000);
+                    login();
                     return;
                 }
                 IMAccount imAccount = response.body();
                 if (imAccount.getData() == null) {
+                    LogUtils.d("网络获取网络IM账户", "数据获取失败，服务器数据未成功处理，data为空数据，1分钟后重新请求");
                     mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT, 60000);
                     login();
                     return;
@@ -640,13 +692,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 SPUtils.setSharedStringData(mContext, BundleKey.IM_PASSWORD, mIMPassword);
                 SPUtils.setSharedIntData(mContext, BundleKey.DEVICE_ID, mDeviceId);
                 SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mDeviceCode);
+                LogUtils.d("网络获取网络IM账户", "数据获取成功，IM账号：" + mIMUsername + "，设备号：" + mDeviceId);
                 doAfterLogin();
             }
 
             @Override
             public void onFailure(Call<IMAccount> call, Throwable t) {
                 //Toast.makeText(mContext, t.getMessage(), //Toast.LENGTH_SHORT).show();
-                mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT, 60000);
+                mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_ACCOUNT, 6000);
                 login();
             }
         });
@@ -668,8 +721,10 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mIMUsername = SPUtils.getSharedStringData(mContext, BundleKey.IM_ACCOUNT);
         mIMPassword = SPUtils.getSharedStringData(mContext, BundleKey.IM_PASSWORD);
         if (TextUtils.isEmpty(mIMUsername) || TextUtils.isEmpty(mIMPassword)) {
+            LogUtils.d("IM登录", "未获取到正确的账户及密码，不进行IM登录");
             return;
         }
+        LogUtils.d("IM登录", "正在进行IM登录");
         BasicCallback callback = new BasicCallback() {
             @Override
             public void gotResult(int i, String s) {
@@ -683,12 +738,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     if (Config.DEBUG) {
                         ToastUtil.shortToast(mContext, "登陆成功" + myInfo.getUserName());
                     }
+                    LogUtils.d("IM登录", "IM登录成功，显示为 在线 状态");
                     mIdleServerStatusTv.setText("在线");
                     mIdleServerStatusTv.setEnabled(true);
                 } else {
                     if (Config.DEBUG) {
                         ToastUtil.shortToast(mContext, "离线：Code:" + i + "   Reason:" + s);
                     }
+                    LogUtils.d("IM登录", "IM登录失败，显示为 离线 状态");
                     mIdleServerStatusTv.setText("离线");
                     mIdleServerStatusTv.setEnabled(false);
                 }
@@ -1091,6 +1148,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      */
     public void checkOnOff() {
         ArrayList<Schedule.ScheduleBean> list = (ArrayList<Schedule.ScheduleBean>) DBUtils.getInstance().findAllSchedule();
+        LogUtils.e("启动", "检测开关机时间");
         handleOnOff(list);
     }
 
@@ -1257,17 +1315,19 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             }
         }
         // 再次取消所设定的开关机
+        LogUtils.e("设置开关机", "清除原开关机时间设置");
         PowerUtils.cancelPowerOnOff(mContext, mBrand, mMainforsettimezone);
         //开关机时间都 不为0
         if (latestOff != 0L && latestOn != 0L) {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             if (Config.DEBUG) {
                 Toast.makeText(mContext, "开关机时间:下一次关机：" + simpleDateFormat.format(latestOff)
-                        + "后下一次开机：" + simpleDateFormat.format(latestOn) + "后", Toast.LENGTH_LONG).show();
+                        + "后下一次开机：" + simpleDateFormat.format(latestOn) + "", Toast.LENGTH_LONG).show();
             }
             String log = "开关机时间:下一次关机：" + latestOff + "__" + simpleDateFormat.format(latestOff)
-                    + "后下一次开机：" + latestOn + "__" + simpleDateFormat.format(latestOn) + "后";
-            LogUtils.e("开关机时间", log);
+                    + "后下一次开机：" + latestOn + "__" + simpleDateFormat.format(latestOn) + "";
+//            LogUtils.e("开关机时间", log);
+            LogUtils.e("设置开关机", log);
             if (Config.DEBUG) {
                 mLogView.append(log);
             }
@@ -1400,7 +1460,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mHandler.sendMessageDelayed(message, time);
         LogUtils.e("addAlarmTask", "Task时间：" + task.getStart_time() * 1000L);
         if (Config.DEBUG) {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String type = "";
             switch (task.getType()) {
                 case AppConstant.TASK_TYPE_PICTURE:
@@ -1499,13 +1559,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mPicturePager.stop();
     }
 
-    /**
-     * 唤醒后继续任务
-     */
-    private void resumeTask() {
-//        queryTask();
-        doAfterLogin();
-    }
 
     /**
      * 唤醒
@@ -1522,7 +1575,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         //获取PowerManager.WakeLock对象,后面的参数|表示同时传入两个值,最后的是LogCat里用的Tag
         PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP
-                | PowerManager.SCREEN_DIM_WAKE_LOCK, "bright");
+                | PowerManager.SCREEN_DIM_WAKE_LOCK, "projecting:bright");
         //点亮屏幕
         wl.acquire();
         Call<BaseResponse> wakeupCall = Api.getDefault(HostType.VOM_HOST).setWakeUp(Api.getCacheControl(),
@@ -1553,6 +1606,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
         }
     }
+
+    /**
+     * 唤醒后继续任务
+     */
+    private void resumeTask() {
+//        queryTask();
+        doAfterLogin();
+    }
+
 
     /**
      * 调节音量
@@ -1807,7 +1869,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     }
 
-    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     /**
      * 直接截图发送
@@ -2139,7 +2201,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             mTaskIds.put(task.getType(), taskId);
         }
         LogUtils.e("executeTask", task.toString());
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         if (Config.DEBUG) {
             String type = "";
             switch (task.getType()) {
@@ -2283,7 +2345,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             LogUtils.e("移除任务", "Map移除任务,Size:" + mTaskIds.size());
         } catch (Exception e) {
         }
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd kk:mm:ss");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         if (Config.DEBUG) {
             String type = "";
             switch (task.getType()) {
@@ -2476,6 +2538,11 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
     }
 
+    /**
+     * @param keyCode
+     * @param event
+     * @return
+     */
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_M) {
