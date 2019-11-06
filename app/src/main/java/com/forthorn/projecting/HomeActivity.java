@@ -1,8 +1,8 @@
 package com.forthorn.projecting;
 
 import android.app.Activity;
-import android.app.AlarmManager;
 import android.app.KeyguardManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -170,18 +170,24 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private static final int LOGIN_TIME = 1800000;
 
 
+    public static final String ACTION_CHECK_SCREEN = "com.forthorn.projecting.check_screen";
+
+
     //是否是在执行插播的任务
     private boolean mInterCutting;
     //插播的任务
     private Task mInterCuttingTask;
     private HttpProxyCacheServer proxy;
 
-    //品牌
-    private String mBrand = Build.BRAND;
+    //品牌 如果是瑞微芯的品牌，还有可能是X88盒子
+    private String mBrand = Build.BRAND.equals(BRAND_ROCKCHIP) ?
+            (Build.MODEL.startsWith(BRAND_ROCKX88) ? BRAND_ROCKX88 : BRAND_ROCKX88)
+            : Build.BRAND;
 
     public static final String BRAND_ONE = "Allwinner";
     public static final String BRAND_QUANZHI = "softwinners";
     public static final String BRAND_ROCKCHIP = "rockchip";
+    public static final String BRAND_ROCKX88 = "X884GLte";
 
     private Mainforsettimezone mMainforsettimezone;
 
@@ -192,6 +198,22 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private Timer mTimer;
 
     private long mStartTime;
+
+    private HomeReceiver mHomeReceiver = new HomeReceiver();
+
+
+    public class HomeReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent == null) {
+                return;
+            }
+            if (ACTION_CHECK_SCREEN.equals(intent.getAction())) {
+                checkStatus();
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -205,6 +227,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         SQLiteStudioService.instance().start(mContext);
         setContentView(R.layout.activity_home);
         LogUtils.e("启动", "主界面加载");
+        PowerUtils.getInstance().setScreenStatus(PowerUtils.SCREEN_ON);
+        registerReceiver(mHomeReceiver, new IntentFilter(ACTION_CHECK_SCREEN));
         initView();
         initData();
         initEvent();
@@ -235,21 +259,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
     }
 
-
-    /**
-     * 格式化时间
-     *
-     * @param milliseconds 毫秒值
-     * @return 格式化后的 XX小时XX分XX秒 字符串
-     */
-    private String formatTime(long milliseconds) {
-        long seconds = milliseconds / 1000;
-        int hour = (int) (seconds / 3600);
-        int minute = (int) ((seconds - hour * 3600) / 60);
-        int second = (int) (seconds % 60);
-        return hour + "小时" + minute + "分" + second + "秒";
-    }
-
     @Override
     protected void onStop() {
         super.onStop();
@@ -266,7 +275,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         mVideoView.stopPlayback();
         mHandler.removeCallbacksAndMessages(null);
         SQLiteStudioService.instance().stop();
+        PowerUtils.getInstance().setScreenStatus(PowerUtils.SCREEN_ON);
         unregisterReceiver(mAlarmReceiver);
+        unregisterReceiver(mHomeReceiver);
         JMessageClient.unRegisterEventReceiver(this);
         mRxManager.clear();
         if (!mBackPressed) {
@@ -275,6 +286,29 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             stopFeedDog();
         }
         super.onDestroy();
+    }
+
+    private void checkStatus() {
+        if (mStatus == Status.IDLE) {
+            PowerUtils.getInstance().setScreenStatus(PowerUtils.SCREEN_OFF);
+        } else {
+            PowerUtils.getInstance().setScreenStatus(PowerUtils.SCREEN_ON);
+        }
+    }
+
+
+    /**
+     * 格式化时间
+     *
+     * @param milliseconds 毫秒值
+     * @return 格式化后的 XX小时XX分XX秒 字符串
+     */
+    private String formatTime(long milliseconds) {
+        long seconds = milliseconds / 1000;
+        int hour = (int) (seconds / 3600);
+        int minute = (int) ((seconds - hour * 3600) / 60);
+        int second = (int) (seconds % 60);
+        return hour + "小时" + minute + "分" + second + "秒";
     }
 
 
@@ -399,15 +433,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         //Toast.makeText(mContext, "现在是：" + sdf.format(new Date()), //Toast.LENGTH_SHORT).show();
         nextHourTimeStamp = getNextHourStamp();
         //Toast.makeText(mContext, "下一个整点是：" + sdf.format(new Date(nextHourTimeStamp * 1000L)), //Toast.LENGTH_SHORT).show();
-        Log.e("Alarm", "下一个整点是：" + sdf.format(new Date(nextHourTimeStamp * 1000L)));
+        Log.e("Alarm", "现在是：" + sdf.format(new Date()) + " , 下一个整点是：" + sdf.format(new Date(nextHourTimeStamp * 1000L)));
         //Toast.makeText(mContext, "下一个请求将在：" + sdf.format(new Date(nextHourTimeStamp * 1000L - 300000L)), //Toast.LENGTH_SHORT).show();
         long nextTime = nextHourTimeStamp * 1000L - 3540000L;
         if (nextTime - System.currentTimeMillis() < 0) {
             nextTime = nextTime + 3600000L;
             requestTasks(nextHourTimeStamp);
         }
-        LogUtils.e("Alarm", "下一个请求将在：" + sdf.format(new Date(nextTime)));
-        LogUtils.e("Alarm", (nextTime - System.currentTimeMillis()) / 1000 + "秒后请求");
+//        LogUtils.e("Alarm", "下一个请求将在：" + sdf.format(new Date(nextTime)));
+        LogUtils.e("Alarm", "下一个请求将在：" + sdf.format(new Date(nextTime)) + ", 即 " + (nextTime - System.currentTimeMillis()) / 1000 + "秒后请求");
         mHandler.removeMessages(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE);
         mHandler.sendEmptyMessageDelayed(HANDLER_MESSAGE_TIMING_REQUESR_MESSAGE, nextTime - System.currentTimeMillis());
     }
@@ -417,7 +451,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         @Override
         public void handleMessage(android.os.Message msg) {
             super.handleMessage(msg);
-            LogUtils.e("handlerMsg", "what:" + msg.what + "__arg1:" + msg.arg1);
+//            LogUtils.e("handlerMsg", "what:" + msg.what + "__arg1:" + msg.arg1);
             switch (msg.what) {
                 case HANDLER_MESSAGE_TIMING_LOGIN:
                     //Toast.makeText(mContext, "每十分钟登录一次", //Toast.LENGTH_SHORT).show();
@@ -465,18 +499,18 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                     && msg.what != HANDLER_MESSAGE_FEED_DOG
                     && msg.what != HANDLER_MESSAGE_DISPLAY_TIME) {
                 int taskId = msg.what;
-                LogUtils.e("任务消息", "taskID=" + taskId);
+//                LogUtils.e("任务消息", "taskID=" + taskId);
                 int type = msg.arg1;
                 if (type == 0) {
                     return;
                 }
                 switch (type) {
                     case HANDLER_MESSAGE_START_ALARM:
-                        LogUtils.e("任务消息", "task类型=执行任务");
+//                        LogUtils.e("任务消息", "task类型=执行任务");
                         executeTask(taskId);
                         break;
                     case HANDLER_MESSAGE_FINISH_ALARM:
-                        LogUtils.e("任务消息", "task类型=结束任务");
+//                        LogUtils.e("任务消息", "task类型=结束任务");
                         finishTask(taskId);
                         break;
                 }
@@ -492,6 +526,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     public void onBackPressed() {
         mBackPressed = true;
         super.onBackPressed();
+        finish();
     }
 
     /**
@@ -626,7 +661,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 //        mUuid = "16d98032-36d7-3467-98f9-ee2086a6eb71";
 //        mUuid = "81292800-f23c-3ff9-bab2-469732b4d806";
 //        mUuid = "a37a8a78-b8fb-3e09-8295-405983d8069c";
-        mUuid = "c12280f4-d12c-3fdf-be79-583585244580"; //聚力
+//        mUuid = "c12280f4-d12c-3fdf-be79-583585244580"; //聚力
         SPUtils.setSharedStringData(mContext, BundleKey.DEVICE_CODE, mUuid);
         mDeviceCode = mUuid;
         mDeviceId = SPUtils.getSharedIntData(mContext, BundleKey.DEVICE_ID);
@@ -1135,7 +1170,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void handleOnOffTask(Task task) {
 //        Toast.makeText(mContext, "task:" + task.getList().size(), Toast.LENGTH_SHORT).show();
         //先取消原有的定时开关
-        PowerUtils.cancelPowerOnOff(mContext, mBrand, mMainforsettimezone);
+        PowerUtils.getInstance().cancelPowerOnOff(mContext, mBrand, mMainforsettimezone);
         List<Schedule.ScheduleBean> scheduleList = task.getList();
         if (scheduleList != null) {
             DBUtils.getInstance().updateSchedule(scheduleList);
@@ -1163,9 +1198,21 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * @param list
      */
     public void handleOnOff(List<Schedule.ScheduleBean> list) {
+//        Schedule.ScheduleBean  scheduleBean = new Schedule.ScheduleBean();
+        // TODO: 2019-10-28  测试数据
+//        list = new ArrayList<>();
+//        Schedule.ScheduleBean bean = new Schedule.ScheduleBean();
+//        bean.setStartDay("0");
+//        bean.setOffDay("0");
+//        bean.setStartTime("02:07");
+//        bean.setOffTime("02:10");
+//        list.add(bean);
         if (list == null || list.isEmpty()) {
-            PowerUtils.cancelPowerOnOff(mContext, mBrand, mMainforsettimezone);
+            PowerUtils.getInstance().cancelPowerOnOff(mContext, mBrand, mMainforsettimezone);
             return;
+        }
+        for (Schedule.ScheduleBean scheduleBean : list) {
+            Log.e("handleOnOff", scheduleBean.toString());
         }
         //day -0 星期天，1-星期一，。。。。
         long latestOff = 0L;
@@ -1316,7 +1363,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         }
         // 再次取消所设定的开关机
         LogUtils.e("设置开关机", "清除原开关机时间设置");
-        PowerUtils.cancelPowerOnOff(mContext, mBrand, mMainforsettimezone);
+        PowerUtils.getInstance().cancelPowerOnOff(mContext, mBrand, mMainforsettimezone);
         //开关机时间都 不为0
         if (latestOff != 0L && latestOn != 0L) {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -1324,14 +1371,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 Toast.makeText(mContext, "开关机时间:下一次关机：" + simpleDateFormat.format(latestOff)
                         + "后下一次开机：" + simpleDateFormat.format(latestOn) + "", Toast.LENGTH_LONG).show();
             }
-            String log = "开关机时间:下一次关机：" + latestOff + "__" + simpleDateFormat.format(latestOff)
-                    + "后下一次开机：" + latestOn + "__" + simpleDateFormat.format(latestOn) + "";
+            String log = "开关机时间:下一次关机：" + latestOff + "_" + simpleDateFormat.format(latestOff)
+                    + ", 下一次开机：" + latestOn + "_" + simpleDateFormat.format(latestOn) + "";
 //            LogUtils.e("开关机时间", log);
             LogUtils.e("设置开关机", log);
             if (Config.DEBUG) {
                 mLogView.append(log);
             }
-            PowerUtils.setPowerOnOff(mContext, mBrand, latestOff, latestOn, mMainforsettimezone);
+            PowerUtils.getInstance().setPowerOnOff(mContext, mBrand, latestOff, latestOn, mMainforsettimezone);
         }
     }
 
@@ -1431,7 +1478,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         message.arg1 = HANDLER_MESSAGE_FINISH_ALARM;
         long time = task.getFinish_time() * 1000L - 200L - System.currentTimeMillis();
         mHandler.sendMessageDelayed(message, time);
-        LogUtils.e("addFinishAlarmTask", "Task时间：" + task.getFinish_time() * 1000L);
+        LogUtils.e("添加任务结束闹钟", "Task时间：" + task.getFinish_time() * 1000L);
     }
 
     /**
@@ -1442,9 +1489,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
     private void addAlarmTask(Task task) {
 //            已经添加并正在执行的任务不再添加闹钟
         for (Integer key : mTaskIds.keySet()) {
-            LogUtils.e("addAlarmTask", "遍历已经存在的任务：" + key + ", value:" + mTaskIds.get(key));
+            LogUtils.e("添加任务闹钟", "遍历已经存在的任务：" + key + ", value:" + mTaskIds.get(key));
         }
-        LogUtils.e("addAlarmTask", "添加任务判断：" + task.getId());
+        LogUtils.e("添加任务闹钟", "添加任务判断：" + task.getId());
         if (Integer.valueOf(task.getId()).equals((Integer) mTaskIds.get(task.getType()))) {
             return;
         }
@@ -1456,9 +1503,9 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
         if (time < 0) {
             time = 100L;
         }
-        LogUtils.e("addAlarmTask", "DelayTime:" + time + "___ID:" + task.getId());
+//        LogUtils.e("添加任务闹钟", "DelayTime:" + time + "___ID:" + task.getId());
         mHandler.sendMessageDelayed(message, time);
-        LogUtils.e("addAlarmTask", "Task时间：" + task.getStart_time() * 1000L);
+        LogUtils.e("添加任务闹钟", "DelayTime:" + time + "_ID:" + task.getId() + "，Task开始时间：" + task.getStart_time() * 1000L);
         if (Config.DEBUG) {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             String type = "";
@@ -1546,8 +1593,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             sendBroadcast(intent);
         } else if (BRAND_ROCKCHIP.equals(mBrand)) {
 
-        } else {
-
+        } else if (BRAND_ROCKX88.equals(mBrand)) {
+            PowerUtils.getInstance().setScreenStatus(0);
         }
     }
 
@@ -1602,8 +1649,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
             sendBroadcast(new Intent().setAction("android.intent.action.pubds_reboot"));
         } else if (BRAND_ROCKCHIP.equals(mBrand)) {
 
-        } else {
-
+        } else if (BRAND_ROCKX88.equals(mBrand)) {
+            PowerUtils.getInstance().setScreenStatus(1);
         }
     }
 
@@ -2148,14 +2195,14 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      * 休眠
      */
     private void screenOff() {
-
+        PowerUtils.getInstance().setScreenStatus(0);
     }
 
     /**
      * 唤醒
      */
     private void screenOn() {
-
+        PowerUtils.getInstance().setScreenStatus(1);
     }
 
 
@@ -2188,19 +2235,19 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
 
     @Override
     public void executeTask(int taskId) {
-        LogUtils.e("executeTask", "taskId=" + taskId);
+//        LogUtils.e("执行任务", "taskId=" + taskId);
         Task task = DBUtils.getInstance().findTask(taskId);
         if (task == null) {
-            LogUtils.e("executeTask", "task = null");
+            LogUtils.e("执行任务", "task = null，任务为空，返回");
             return;
         }
         if (Integer.valueOf(taskId).equals((Integer) mTaskIds.get(task.getType()))) {
-            LogUtils.e("执行中", "当前已存在执行中的任务:" + taskId);
+            LogUtils.e("执行任务", "当前已存在执行中的任务:" + taskId);
             return;
         } else {
             mTaskIds.put(task.getType(), taskId);
         }
-        LogUtils.e("executeTask", task.toString());
+        LogUtils.e("执行任务", task.toString());
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         if (Config.DEBUG) {
             String type = "";
@@ -2335,14 +2382,15 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      */
     @Override
     public void finishTask(int taskId) {
-        LogUtils.e("finishTask", "taskId=" + taskId);
+//        LogUtils.e("结束任务", "taskId=" + taskId);
         Task task = DBUtils.getInstance().findTask(taskId);
         if (task == null) {
+            LogUtils.e("结束任务", "task = null, 退出结束");
             return;
         }
         try {
             mTaskIds.remove(task.getType());
-            LogUtils.e("移除任务", "Map移除任务,Size:" + mTaskIds.size());
+            LogUtils.e("结束任务", "移除任务，Map移除任务, Size:" + mTaskIds.size());
         } catch (Exception e) {
         }
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -2393,7 +2441,6 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 }
             }, 2000);
             return;
-
         }
         switch (mStatus) {
             case VIDEO:
@@ -2536,6 +2583,7 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
                 //Toast.makeText(mContext, "当前状态：文字", //Toast.LENGTH_SHORT).show();
                 break;
         }
+        checkStatus();
     }
 
     /**
@@ -2545,6 +2593,8 @@ public class HomeActivity extends Activity implements View.OnClickListener, Alar
      */
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        //有任何按键行为，都将唤醒
+        PowerUtils.getInstance().setScreenStatus(PowerUtils.SCREEN_ON);
         if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_M) {
             mBackPressed = true;
             goToAbout();

@@ -113,6 +113,16 @@ public class Schedule {
         public void setOffDay(String offDay) {
             this.offDay = offDay;
         }
+
+        @Override
+        public String toString() {
+            return "ScheduleBean{" +
+                    "startTime='" + startTime + '\'' +
+                    ", startDay='" + startDay + '\'' +
+                    ", offTime='" + offTime + '\'' +
+                    ", offDay='" + offDay + '\'' +
+                    '}';
+        }
     }
 
     public static class ScheduleVolumeBean {

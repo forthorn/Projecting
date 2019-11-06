@@ -45,7 +45,15 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.SET_TIME_ZONE" />
+    <uses-permission android:name="android.permission.SHUTDOWN" />
+    <uses-permission android:name="android.permission.REBOOT" />
 
+    <protected-broadcast android:name="android.intent.action.HIDE_NAVIGATION_BAR" />
+    <protected-broadcast android:name="android.intent.action.SHOW_NAVIGATION_BAR" />
+    <protected-broadcast android:name="com.forthorn.projecting.DAEMON" />
+    <protected-broadcast android:name="com.forthorn.projecting.STOP_DAEMON" />
+    <protected-broadcast android:name="android.action.juli.HIDE_STATUSBAR" />
+    <protected-broadcast android:name="android.intent.action.HIDE_STATUS_BAR" />
 
     <application
         android:name="com.forthorn.projecting.app.AppApplication"
@@ -57,7 +65,7 @@
         android:persistent="true"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.FullScreen"
-        android:usesCleartextTraffic="false"
+        android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning">
         <uses-library
             android:name="org.apache.http.legacy"
@@ -80,7 +88,10 @@
             android:theme="@style/FullscreenTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
         <activity

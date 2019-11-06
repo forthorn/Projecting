@@ -32,6 +32,11 @@ public class AppDaemonService extends Service {
     private static final String TAG = "AppDaemon";
     private static final long INTERVEL = 20000L;
     public static final int MSG_CHECK = 0X0;
+
+    /**
+     * 休眠检测
+     */
+    public static final int MSG_CHECK_SLEEP = 0X1;
     public static final String ACTION_DAEMON = "com.forthorn.projecting.DAEMON";
     public static final String ACTION_STOP_DAEMON = "com.forthorn.projecting.STOP_DAEMON";
 
@@ -54,6 +59,8 @@ public class AppDaemonService extends Service {
                 if (mReference != null && mReference.get() != null) {
                     mReference.get().checkDog();
                 }
+            } else if (msg.what == MSG_CHECK_SLEEP) {
+
             }
         }
     }

@@ -1,8 +1,13 @@
 package com.xboot.stdcall;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.widget.Toast;
 
 import com.forthorn.projecting.Config;
@@ -10,6 +15,7 @@ import com.forthorn.projecting.HomeActivity;
 import com.forthorn.projecting.app.AppApplication;
 import com.juli.settimezone.cn.Mainforsettimezone;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -21,9 +27,131 @@ import java.util.TimeZone;
 public class PowerUtils {
 
 
-    public static boolean cancelPowerOnOff(Context context, String brand, Mainforsettimezone mainforsettimezone) {
+    private static PowerUtils sInstance;
+    private Handler mHandler;
+//    public static final int MSG_CANCEL = 9001;
+    public static final int MSG_POWER_ON = 9002;
+    public static final int MSG_POWER_OFF = 9003;
+    public static final int MSG_CHECK_SCREEN = 9004;
+
+    public static final int SCREEN_OFF = 0;
+    public static final int SCREEN_ON = 1;
+
+    private PowerUtils() {
+        mHandler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                switch (msg.what) {
+                    case MSG_POWER_ON:
+                        //开机
+                        Log.e("MSG_POWER_ON", "MSG_POWER_ON");
+                        powerOn();
+                        break;
+                    case MSG_POWER_OFF:
+                        //关机
+                        Log.e("MSG_POWER_OFF", "MSG_POWER_OFF");
+                        powerOff();
+                        break;
+                    case MSG_CHECK_SCREEN:
+                        Log.e("MSG_CHECK_SCREEN", "MSG_CHECK_SCREEN");
+                        checkScreen();
+                    default:
+                        break;
+                }
+            }
+        };
+    }
+
+    /**
+     * 检测屏幕状态
+     */
+    private void checkScreen() {
+        Intent intent = new Intent(HomeActivity.ACTION_CHECK_SCREEN);
+        AppApplication.getApplication().sendBroadcast(intent);
+    }
+
+    /**
+     * x88没法真正关机，只能休眠
+     */
+    private void powerOff() {
+        Log.e("执行关机", "执行关机");
+        // TODO: 2019-10-28  关机的话，需要断开一切连接，清除任务
+        KeyUtil.getInstance().performKey(KeyEvent.KEYCODE_POWER);
+    }
+
+    /**
+     * 重启
+     * 可能广播生效，可能命令行生效
+     */
+    private void powerOn() {
+        Log.e("执行开机", "执行开机");
+        Intent intent = new Intent(Intent.ACTION_REBOOT);
+        intent.putExtra("nowait", 1);
+        intent.putExtra("interval", 1);
+        intent.putExtra("window", 0);
+        AppApplication.getApplication().sendBroadcast(intent);
+        try {
+            Runtime.getRuntime().exec(new String[]{"su", "-c", "reboot -p"});
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * X88机型睡眠
+     */
+    public void sleep() {
+        KeyUtil.getInstance().performKey(KeyEvent.KEYCODE_POWER);
+    }
+
+    /**
+     * X88机型唤醒
+     */
+    public void wakeUp() {
+        KeyUtil.getInstance().performKey(KeyEvent.KEYCODE_POWER);
+    }
+
+    private static class InstanceHolder {
+        private static PowerUtils sInstance = new PowerUtils();
+    }
+
+    public static PowerUtils getInstance() {
+        return InstanceHolder.sInstance;
+    }
+
+
+    /**
+     * 设置屏幕开关状态
+     *
+     * @param value 0-关 ，1-开
+     */
+    @SuppressLint("DefaultLocale")
+    public void setScreenStatus(int value) {
+        delayCheckScreenStatus();
+        try {
+            Runtime.getRuntime().exec(new String[]{"su", "-c", String.format("echo %d > /sys/class/display/HDMI/enable", value)});
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void delayCheckScreenStatus() {
+        mHandler.removeMessages(MSG_CHECK_SCREEN);
+        mHandler.sendEmptyMessageDelayed(MSG_CHECK_SCREEN, 60 * 1000);
+    }
+
+    public boolean cancelPowerOnOff(Context context, String brand, Mainforsettimezone mainforsettimezone) {
         // TODO: 2019-05-23  根据品牌判断
-        if (HomeActivity.BRAND_QUANZHI.equals(brand)) {
+        if (HomeActivity.BRAND_ROCKX88.equals(brand)) {
+            Log.e("cancelPowerOnOff", "cancelPowerOnOff");
+//            mHandler.removeMessages(MSG_CANCEL);
+            mHandler.removeMessages(MSG_POWER_ON);
+            mHandler.removeMessages(MSG_POWER_OFF);
+            return true;
+        } else if (HomeActivity.BRAND_QUANZHI.equals(brand)) {
             //取消关机
             Intent shutdownintent = new Intent("com.example.jt.shutdowntime");
             shutdownintent.putExtra("message", "cancel");
@@ -56,26 +184,27 @@ public class PowerUtils {
         }
     }
 
-//    @Override
-//    public void setPowerOnAtTime(long milliseconds) {
-//        Intent intent = new Intent("rk.android.SET_RTC_TIME");
-//        intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY);
-//
-//        Calendar instance = Calendar.getInstance();
-//        instance.setTimeInMillis(milliseconds);
-//        intent.putExtra("hour", instance.get(Calendar.HOUR_OF_DAY));
-//        intent.putExtra("minute", instance.get(Calendar.MINUTE));
-//        mContext.sendBroadcast(intent);
-//    }
 
-
-    public static boolean setPowerOnOff(Context context, String brand, long mTimeOff, long mTimeOn, Mainforsettimezone mainforsettimezone) {
+    public boolean setPowerOnOff(Context context, String brand, long mTimeOff, long mTimeOn, Mainforsettimezone mainforsettimezone) {
         if (mTimeOn == -1 || mTimeOff == -1) {
             return false;
         }
         TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
         long nowTime = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")).getTimeInMillis();
-        if (HomeActivity.BRAND_QUANZHI.equals(brand)) {
+        if (HomeActivity.BRAND_ROCKX88.equals(brand)) {
+            long timeOffOffset = mTimeOff - nowTime;
+            long timeOnOffset = mTimeOn - nowTime;
+//             TODO: 2019-10-28  测试
+//            timeOffOffset = 60000L;
+//            timeOnOffset = 120000L;
+            mHandler.removeMessages(MSG_POWER_ON);
+            mHandler.removeMessages(MSG_POWER_OFF);
+            Log.e("设置开关机时间Msg", "关机时间：" + timeOffOffset);
+            Log.e("设置开关机时间Msg", "开机时间：" + timeOnOffset);
+            mHandler.sendEmptyMessageDelayed(MSG_POWER_OFF, timeOffOffset);
+            mHandler.sendEmptyMessageDelayed(MSG_POWER_ON, timeOnOffset);
+            return true;
+        } else if (HomeActivity.BRAND_QUANZHI.equals(brand)) {
             long timeOffOffset = mTimeOff - nowTime;
             long timeOnOffset = mTimeOn - nowTime;
             //设定开机时间
@@ -84,8 +213,10 @@ public class PowerUtils {
             quanzhiPowerOff(context, timeOffOffset);
             return true;
         } else if (HomeActivity.BRAND_ROCKCHIP.equals(brand)) {
-            int[] on = new int[6];//开机时间,年,月,日,时,分
-            int[] off = new int[6];//关机时间,年,月,日,时,分
+            //开机时间,年,月,日,时,分
+            int[] on = new int[6];
+            //关机时间,年,月,日,时,分
+            int[] off = new int[6];
             Calendar localCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8:00"));
             localCalendar.setTime(new Date(mTimeOff));
             String str1 = String.valueOf(localCalendar.get(Calendar.YEAR));
@@ -117,23 +248,26 @@ public class PowerUtils {
         } else {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             // 关机
-            long second = (mTimeOff - nowTime) / 1000;// 总共多少秒
-            Long eH = second / 3600;// 总共多少小时
-            Long eM = (second / 60) % 60;// 剩余分钟
+            // 总共多少秒
+            long second = (mTimeOff - nowTime) / 1000;
+            // 总共多少小时
+            long eH = second / 3600;
+            // 剩余分钟
+            long eM = (second / 60) % 60;
             // 开机
             second = (mTimeOn - mTimeOff) / 1000;
-            Long sH = (second / 3600);
-            Long sM = ((second / 60) % 60);
+            long sH = (second / 3600);
+            long sM = ((second / 60) % 60);
 
             Log.e("setPowerOnOff", "off" + simpleDateFormat.format(mTimeOff) + "On:" +
                     simpleDateFormat.format(mTimeOn) + "sH：" + sH + "sM" + sM
                     + "eH:" + eH + "eM:" + eM);
             if (Config.DEBUG) {
                 Toast.makeText(context, "off" + simpleDateFormat.format(mTimeOff) + "On:" +
-                        simpleDateFormat.format(mTimeOn) + "sH：" + sH.byteValue() + "sM" + sM.byteValue()
-                        + "eH:" + eH.byteValue() + "eM:" + eM.byteValue(), Toast.LENGTH_SHORT).show();
+                        simpleDateFormat.format(mTimeOn) + "sH：" + (byte) sH + "sM" + (byte) sM
+                        + "eH:" + (byte) eH + "eM:" + (byte) eM, Toast.LENGTH_SHORT).show();
             }
-            return setPowerOnOff(sH.byteValue(), sM.byteValue(), eH.byteValue(), eM.byteValue(), (byte) 3);
+            return setPowerOnOff((byte) sH, (byte) sM, (byte) eH, (byte) eM, (byte) 3);
         }
     }
 
@@ -163,7 +297,7 @@ public class PowerUtils {
         if (timeOffset > 24 * 60 * 60 * 1000) {
             return;
         }
-        long time = new Date().getTime() + timeOffset;
+        long time = System.currentTimeMillis() + timeOffset;
         String boottime = "1,0,0" + getStringTime(time);
         Intent bootintent = new Intent("com.example.jt.boottime");
         bootintent.putExtra("message", boottime);
@@ -176,7 +310,7 @@ public class PowerUtils {
         if (timeOffset > 24 * 60 * 60 * 1000) {
             return;
         }
-        long time = new Date().getTime() + timeOffset;
+        long time = System.currentTimeMillis() + timeOffset;
         String shutdownTime = "1,0,0" + getStringTime(time);
         Intent shutdownintent = new Intent("com.example.jt.shutdowntime");
         shutdownintent.putExtra("message", shutdownTime);

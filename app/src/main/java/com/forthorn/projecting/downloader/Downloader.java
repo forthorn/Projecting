@@ -118,6 +118,7 @@ public class Downloader {
 
     /**
      * 检查磁盘空间大小，可用空间不足1024M则先删除文件再下载
+     * TODO   清除一个月前的日志文件
      */
     private String checkDiskSpaceAndDir() {
         File sdcardDir;
